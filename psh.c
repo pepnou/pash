@@ -24,7 +24,7 @@ int prompt()
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
-void handle( char c, char* buf, char* tmp, size_t* deb, size_t* cur, size_t* fin, size_t* size, int* over)
+void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, int* over)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -81,7 +81,24 @@ void handle( char c, char* buf, char* tmp, size_t* deb, size_t* cur, size_t* fin
 			}
 			case 127:
 			{
-				
+				if(*cur == 0)
+					break;
+
+				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
+				//strncpy( tmp, &(buf[*cur]), *fin - *cur + 1);
+				//strncpy( &(buf[*cur + 1]), tmp, *fin - *cur + 1);
+
+				write(STDOUT_FILENO, RESTC, strlen(RESTC));
+				write(STDOUT_FILENO, DELLI, strlen(DELLI));
+
+				write(STDOUT_FILENO, buf, *fin + 1);
+
+				write(STDOUT_FILENO, RESTC, strlen(RESTC));
+				for(int i = 0; i < *cur - 1; i++)
+					write(STDOUT_FILENO, FORWC, strlen(FORWC));
+
+				(*cur)--;
+				(*fin)--;
 				break;
 			}
 			case 27:
@@ -124,14 +141,14 @@ void handle( char c, char* buf, char* tmp, size_t* deb, size_t* cur, size_t* fin
 						}
 						default:
 						{
-							handle(c, buf, tmp, deb, cur, fin, size, over);
+							handle(c, buf, deb, cur, fin, size, over);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, tmp, deb, cur, fin, size, over);
+					handle(c, buf, deb, cur, fin, size, over);
 				}
 
 				break;
@@ -157,15 +174,10 @@ int main( int argc, char** argv, char** envp)
     
 
 
-	char c, *buf, *tmp;
+	char c, *buf;
 	size_t deb, cur, fin, size = 128;
 	cur = fin = deb = 0;
 	if(!(buf = malloc(size)))
-	{
-		perror("allocation du buffer : ");
-		exit(1);
-	}
-	if(!(tmp = malloc(size)))
 	{
 		perror("allocation du buffer : ");
 		exit(1);
@@ -181,7 +193,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, tmp, &deb, &cur, &fin, &size, &over);
+		handle(c, buf, &deb, &cur, &fin, &size, &over);
 
 	} while(!over);
 
