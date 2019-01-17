@@ -1,24 +1,20 @@
 CC ?= gcc
-CFLAG ?= -g
+CFLAG ?= -g -Wall -w
 LDFLAG ?= 
 
-HDRS = $(wildcard *.h)
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
-EXECUTABLE = pash
+EXECUTABLE = $(SRC:.c=)
 
 all : $(EXECUTABLE)
-
-$(EXECUTABLE):$(OBJ)
-	$(CC) $(LDFLAG) $^ -o $@
-
-#$(EXECUTABLE).o:$(HDRS)
+	mkdir build
+	mv $(SRC:.c=) ./build
 
 %.o:%.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-clean:
-	rm *.o
+%:%.o
+	$(CC) $(LDFLAG) $^ -o $@
 
-bigclean:
-	rm *.o $(EXECUTABLE)
+clean:
+	rm -f -r build %.o
