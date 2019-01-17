@@ -36,6 +36,31 @@ size_t prompt()
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
+void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
+{
+	int nbL = (*cur + *prw) / width;
+
+	if(nbL)
+	{
+		int x = (*prw + *cur) % width;
+		for(int i = 0; i < (*prw + *cur) % width; i++)
+			write(STDOUT_FILENO, BACKC, strlen(BACKC));
+	}
+
+	for(int i = 0; i < nbL; i++)
+	{
+		write(STDOUT_FILENO, DELLI, strlen(DELLI));
+		write(STDOUT_FILENO, UPC, strlen(UPC));
+		sleep(1);
+	}
+
+	//write(STDOUT_FILENO, RESTC, strlen(RESTC));
+	for(int i = 0; i < *prw; i++)
+		write(STDOUT_FILENO, FORWC, strlen(FORWC));
+
+	write(STDOUT_FILENO, DELLI, strlen(DELLI));
+}
+
 void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw, int* over)
 {
 	if(c >= 32 && c <= 126)
@@ -52,8 +77,9 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			//strncpy( &(buf[*cur + 1]), tmp, *fin - *cur + 1);
 			buf[*cur] = c;
 
-			write(STDOUT_FILENO, RESTC, strlen(RESTC));
-			write(STDOUT_FILENO, DELLI, strlen(DELLI));
+			//write(STDOUT_FILENO, RESTC, strlen(RESTC));
+			//write(STDOUT_FILENO, DELLI, strlen(DELLI));
+			eraseLine(deb, cur, fin, prw);
 
 			write(STDOUT_FILENO, buf, *fin + 1);
 
@@ -86,8 +112,9 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			}
 			case 21:
 			{
-				write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				write(STDOUT_FILENO, DELLI, strlen(DELLI));
+				//write(STDOUT_FILENO, RESTC, strlen(RESTC));
+				//write(STDOUT_FILENO, DELLI, strlen(DELLI));
+				eraseLine(deb, cur, fin, prw);
 				(*cur) = (*fin) = (*deb) = 0;
 				break;
 			}
@@ -125,7 +152,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 					{
 						case 'A':
 						{
-							if((*cur + *prw) / width)
+							if(*cur / width)
 							{
 								write(STDOUT_FILENO, UPC, strlen(UPC));
 								*cur = *cur - width;
@@ -134,7 +161,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						}
 						case 'B':
 						{
-							if(*fin - *cur > width)
+							if(*fin - *cur >= width)
 							{
 								write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
 								*cur = *cur + width;
