@@ -12,8 +12,10 @@
 
 #define SAVEC "\033[s"
 #define RESTC "\033[u"
-#define BACKC "\033[D"
+#define UPC "\033[A"
+#define DOWNC "\033[B"
 #define FORWC "\033[C"
+#define BACKC "\033[D"
 #define DELLI "\033[K"
 
 int width, height;
@@ -26,15 +28,15 @@ void resize()
 	height = w.ws_row;
 }
 
-int prompt()
+size_t prompt()
 {
-	char pr[] = "\nCC : ";
+	char pr[] = "\nCC$ ";
 	write(STDOUT_FILENO, pr, strlen(pr));
 
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
-void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, int* over)
+void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw, int* over)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -76,7 +78,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			case 10:
 			{
 				//write(STDOUT_FILENO, &c, 1);
-				prompt();
+				*prw = prompt();
 
 				(*cur) = (*fin) = (*deb) = 0;
 				write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
@@ -123,12 +125,20 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 					{
 						case 'A':
 						{
-
+							if((*cur + *prw) / width)
+							{
+								write(STDOUT_FILENO, UPC, strlen(UPC));
+								*cur = *cur - width;
+							}
 							break;
 						}
 						case 'B':
 						{
-
+							if(*fin - *cur > width)
+							{
+								write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
+								*cur = *cur + width;
+							}
 							break;
 						}
 						case 'C':
@@ -151,14 +161,14 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						}
 						default:
 						{
-							handle(c, buf, deb, cur, fin, size, over);
+							handle(c, buf, deb, cur, fin, size, prw, over);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, deb, cur, fin, size, over);
+					handle(c, buf, deb, cur, fin, size, prw, over);
 				}
 
 				break;
@@ -173,6 +183,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 
 int main( int argc, char** argv, char** envp)
 {
+
 	signal( SIGWINCH, &resize);
 
 	static struct termios old, new1;
@@ -187,7 +198,7 @@ int main( int argc, char** argv, char** envp)
 
 
 	char c, *buf;
-	size_t deb, cur, fin, size = 128;
+	size_t deb, cur, fin, size = 1024, prw;
 	cur = fin = deb = 0;
 	if(!(buf = malloc(size)))
 	{
@@ -197,15 +208,15 @@ int main( int argc, char** argv, char** envp)
 	
 	int over = 0;
 
-
-	prompt();
+	resize();
+	prw = prompt();
 	write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
 
 	do
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &deb, &cur, &fin, &size, &over);
+		handle(c, buf, &deb, &cur, &fin, &size, &prw, &over);
 
 	} while(!over);
 
