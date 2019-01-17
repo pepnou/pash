@@ -36,6 +36,62 @@ size_t prompt()
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
+void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
+{
+	int nbL = (*cur + *prw) / width;
+
+	for(int i = 0; i < (*prw + *cur) % width; i++)
+		write(STDOUT_FILENO, BACKC, strlen(BACKC));
+	for(int i = 0; i < nbL; i++)
+	{
+		write(STDOUT_FILENO, DELLI, strlen(DELLI));
+		write(STDOUT_FILENO, UPC, strlen(UPC));
+	}
+
+	//write(STDOUT_FILENO, RESTC, strlen(RESTC));
+	for(int i = 0; i < *prw; i++)
+		write(STDOUT_FILENO, FORWC, strlen(FORWC));
+
+	write(STDOUT_FILENO, DELLI, strlen(DELLI));
+}
+
+void moveC(size_t* source, size_t* dest, size_t* prw)
+{
+	int lS = (*source + *prw) / width;
+	int lD = (*dest + *prw) / width;
+
+	int ldiff = lD - lS;
+	
+	if(ldiff < 0)
+	{
+		for(int i = 0; i < -1*ldiff; i++)
+			write(STDOUT_FILENO, UPC, strlen(UPC));
+	}
+	else if(ldiff > 0)
+	{
+		for(int i = 0; i < ldiff; i++)
+			write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
+	}
+
+	int cS = (*source + *prw) % width;
+	int cD = (*dest + *prw) % width;
+
+	int cdiff = cD - cS;
+
+	if(cdiff < 0)
+	{
+		for(int i = 0; i < -1*cdiff; i++)
+			write(STDOUT_FILENO, BACKC, strlen(BACKC));
+	}
+	else if(cdiff > 0)
+	{
+		for(int i = 0; i < cdiff; i++)
+			write(STDOUT_FILENO, FORWC, strlen(FORWC));
+	}
+	//printf("%d %d\n", ldiff, cdiff);
+	//fflush(stdout);
+}
+
 void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw, int* over)
 {
 	if(c >= 32 && c <= 126)
@@ -48,18 +104,16 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 		else
 		{
 			strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
-			//strncpy( tmp, &(buf[*cur]), *fin - *cur + 1);
-			//strncpy( &(buf[*cur + 1]), tmp, *fin - *cur + 1);
 			buf[*cur] = c;
 
-			write(STDOUT_FILENO, RESTC, strlen(RESTC));
-			write(STDOUT_FILENO, DELLI, strlen(DELLI));
+			eraseLine(deb, cur, fin, prw);
 
 			write(STDOUT_FILENO, buf, *fin + 1);
+			moveC(fin, cur, prw);
 
-			write(STDOUT_FILENO, RESTC, strlen(RESTC));
+			/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
 			for(int i = 0; i < *cur + 1; i++)
-				write(STDOUT_FILENO, FORWC, strlen(FORWC));
+				write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
 		}
 
 		(*cur)++;
@@ -79,7 +133,6 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			//new line : ctrl + J
 			case 10:
 			{
-				//write(STDOUT_FILENO, &c, 1);
 				*prw = prompt();
 
 				(*cur) = (*fin) = (*deb) = 0;
@@ -89,8 +142,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			//effacer tout : ctrl + U
 			case 21:
 			{
-				write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				write(STDOUT_FILENO, DELLI, strlen(DELLI));
+				eraseLine(deb, cur, fin, prw);
 				(*cur) = (*fin) = (*deb) = 0;
 				break;
 			}
@@ -101,17 +153,15 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 					break;
 
 				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
-				//strncpy( tmp, &(buf[*cur]), *fin - *cur + 1);
-				//strncpy( &(buf[*cur + 1]), tmp, *fin - *cur + 1);
 
-				write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				write(STDOUT_FILENO, DELLI, strlen(DELLI));
+				eraseLine(deb, cur, fin, prw);
 
 				write(STDOUT_FILENO, buf, *fin + 1);
+				moveC(fin, cur, prw);
 
-				write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				for(int i = 0; i < *cur - 1; i++)
-					write(STDOUT_FILENO, FORWC, strlen(FORWC));
+				/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
+				for(int i = 0; i < (*cur + *prw) % width - 1; i++)
+					write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
 
 				(*cur)--;
 				(*fin)--;
@@ -130,7 +180,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 					{
 						case 'A':
 						{
-							if((*cur + *prw) / width)
+							if(*cur / width)
 							{
 								write(STDOUT_FILENO, UPC, strlen(UPC));
 								*cur = *cur - width;
@@ -139,7 +189,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						}
 						case 'B':
 						{
-							if(*fin - *cur > width)
+							if(*fin - *cur >= width)
 							{
 								write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
 								*cur = *cur + width;
