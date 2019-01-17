@@ -69,12 +69,14 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 	{
 		switch(c)
 		{
+			//terminer le shell : ctrl + D
 			case 4:
 			{
 				*over = 1;
 				write(STDOUT_FILENO, "\n", 1);
 				break;
 			}
+			//new line : ctrl + J
 			case 10:
 			{
 				//write(STDOUT_FILENO, &c, 1);
@@ -84,6 +86,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 				write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
 				break;
 			}
+			//effacer tout : ctrl + U
 			case 21:
 			{
 				write(STDOUT_FILENO, RESTC, strlen(RESTC));
@@ -91,6 +94,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 				(*cur) = (*fin) = (*deb) = 0;
 				break;
 			}
+			//effacer un caractère
 			case 127:
 			{
 				if(*cur == 0)
@@ -113,6 +117,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 				(*fin)--;
 				break;
 			}
+			//partie avec les flèches
 			case 27:
 			{
 				read(STDIN_FILENO, &c, 1);
