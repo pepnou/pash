@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+#include <signal.h>
 
 
 #define SAVEC "\033[s"
@@ -14,7 +16,15 @@
 #define FORWC "\033[C"
 #define DELLI "\033[K"
 
+int width, height;
 
+void resize()
+{
+	struct winsize w;
+	ioctl( 0, TIOCGWINSZ, &w);
+	width = w.ws_col;
+	height = w.ws_row;
+}
 
 int prompt()
 {
@@ -163,6 +173,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 
 int main( int argc, char** argv, char** envp)
 {
+	signal( SIGWINCH, &resize);
+
 	static struct termios old, new1;
 	int echo = 0;
 
