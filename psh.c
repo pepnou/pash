@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include <termios.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #define SAVEC "\033[s"
 #define RESTC "\033[u"
@@ -31,18 +35,19 @@ void handle( char c, char* buf, char* tmp, size_t* deb, size_t* cur, size_t* fin
 		}
 		else
 		{
-			//strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur);
-
-			strncpy( tmp, &(buf[*cur]), *fin - *cur);
-			strncpy( &(buf[*cur + 1]), tmp, *fin - *cur);
-
-
+			strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
+			//strncpy( tmp, &(buf[*cur]), *fin - *cur + 1);
+			//strncpy( &(buf[*cur + 1]), tmp, *fin - *cur + 1);
 			buf[*cur] = c;
 
 			write(STDOUT_FILENO, RESTC, strlen(RESTC));
 			write(STDOUT_FILENO, DELLI, strlen(DELLI));
 
 			write(STDOUT_FILENO, buf, *fin + 1);
+
+			write(STDOUT_FILENO, RESTC, strlen(RESTC));
+			for(int i = 0; i < *cur + 1; i++)
+				write(STDOUT_FILENO, FORWC, strlen(FORWC));
 		}
 
 		(*cur)++;
