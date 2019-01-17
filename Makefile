@@ -15,11 +15,15 @@ all : $(EXECUTABLE)
 
 pash:pash.o
 	mkdir -p build
-	$(CC) -o ./build/$@ $^ $(LDFLAG)
+	$(CC) -o ./build/$@ $< $(LDFLAG)
 
-test:test.o
+date:date.o
 	mkdir -p build
-	$(CC) -o ./build/$@ $^ $(LDFLAG)
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+intro:intro.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
 
 %.o:%.c
 	$(CC) -o $@ $(CFLAG) -c $<
