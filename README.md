@@ -1,4 +1,7 @@
-# psh
-Welcome to pepnou's shell, my attempt at creating a Shell.
+/!\ PASH /!\
 
-You won't use it, me neither, but i'll create it anyway :)
+Le dossier que vous venez de télécharger est une tentative, réussi je dirais, de créer notre propre PTI nommé pash.
+Nous avons réimplémenté la plupart des commandes du shell bash.
+
+Nous avons également inclut des petits eisteregg du plus belle effet.
+amusez vous bien !

@@ -7,14 +7,29 @@ OBJ = $(SRC:.c=.o)
 EXECUTABLE = $(SRC:.c=)
 
 all : $(EXECUTABLE)
-	mkdir build -p
-	mv $(SRC:.c=) ./build
+
+#COMMENT SIMPLIFIER CA POUR LA LE RECOPIER TOUT LE TEMPS ?
+#<fonction>:<fonction>.o
+#	mkdir -p build
+#	$(CC) -o ./build/$@ $^ $(LDFLAG)
+
+pash:pash.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+date:date.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+intro:intro.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
 
 %.o:%.c
-	$(CC) -o $@ -c $< $(CFLAGS)
-
-%:%.o
-	$(CC) $(LDFLAG) $^ -o $@
+	$(CC) -o $@ $(CFLAG) -c $<
 
 clean:
-	rm -f -r build %.o
+	rm -f *.o
+
+bigclean:
+	rm -r build
