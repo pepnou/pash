@@ -100,15 +100,24 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 		{
 			write(STDOUT_FILENO, &c, 1);
 			buf[*cur] = c;
+
+			if((*cur + *prw + 1) % width == 0)
+			{
+				write(STDOUT_FILENO, " ", 1);
+				write(STDOUT_FILENO, BACKC, strlen(BACKC));
+			}
 		}
 		else
 		{
 			strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
 			buf[*cur] = c;
 
-			eraseLine(deb, cur, fin, prw);
+			write(STDOUT_FILENO, &(buf[*cur]), *fin - *cur + 1);
 
-			write(STDOUT_FILENO, buf, *fin + 1);
+
+			//eraseLine(deb, cur, fin, prw);
+			//write(STDOUT_FILENO, buf, *fin + 1);
+
 			moveC(fin, cur, prw);
 
 			/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
@@ -235,6 +244,12 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 		}
 	}
 }
+
+
+
+
+
+
 
 int main( int argc, char** argv, char** envp)
 {

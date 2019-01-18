@@ -7,7 +7,7 @@ OBJ = $(SRC:.c=.o)
 EXECUTABLE = $(SRC:.c=)
 
 all : $(EXECUTABLE)
-	mkdir build
+	mkdir build -p
 	mv $(SRC:.c=) ./build
 
 %.o:%.c
