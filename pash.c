@@ -19,6 +19,7 @@
 #define DELLI "\033[K"
 
 int width, height;
+int over = 0;
 
 void resize()
 {
@@ -26,6 +27,23 @@ void resize()
 	ioctl( 0, TIOCGWINSZ, &w);
 	width = w.ws_col;
 	height = w.ws_row;
+}
+
+//envoyer ctrl+d dans stdin (jsp comment faire)
+void end()
+{
+	//fonctionne mais attend la prochaine entré dans stdin car read est bloquant
+	//over = 1;
+
+	//pas mal mais ferme stdin --'
+	/*int fd[2];
+	pipe(fd);
+	close(0); // 0:stdin
+	dup2(fd[0], 0); // make read pipe be stdin
+	close(fd[0]);
+	fd[0] = 0;
+
+	write(fd[1], "\4", 1);*/
 }
 
 size_t prompt()
@@ -96,7 +114,7 @@ void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
 
 
 
-void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw, int* over)
+void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -139,7 +157,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			//terminer le shell : ctrl + D
 			case 4:
 			{
-				*over = 1;
+				over = 1;
 				write(STDOUT_FILENO, "\n", 1);
 				break;
 			}
@@ -179,7 +197,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 
 				(*cur)--;
 				(*fin)--;
-				
+
 				moveC(fin, cur, prw);
 
 				break;
@@ -199,8 +217,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur / width)
 							{
-								write(STDOUT_FILENO, UPC, strlen(UPC));
-								*cur = *cur - width;
+								/*write(STDOUT_FILENO, UPC, strlen(UPC));
+								*cur = *cur - width;*/
 							}
 							break;
 						}
@@ -208,8 +226,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*fin - *cur >= width)
 							{
-								write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
-								*cur = *cur + width;
+								/*write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
+								*cur = *cur + width;*/
 							}
 							break;
 						}
@@ -217,8 +235,10 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur < *fin)
 							{
-								write(STDOUT_FILENO, FORWC, strlen(FORWC));
+								//write(STDOUT_FILENO, FORWC, strlen(FORWC));
+								moveC( cur, fin, prw);
 								(*cur)++;
+								moveC( fin, cur, prw);
 							}
 							break;
 						}
@@ -226,21 +246,23 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur > 0)
 							{
-								write(STDOUT_FILENO, BACKC, strlen(BACKC));
+								//write(STDOUT_FILENO, BACKC, strlen(BACKC));
+								moveC( cur, fin, prw);
 								(*cur)--;
+								moveC( fin, cur, prw);
 							}
 							break;
 						}
 						default:
 						{
-							handle(c, buf, deb, cur, fin, size, prw, over);
+							handle(c, buf, deb, cur, fin, size, prw);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, deb, cur, fin, size, prw, over);
+					handle(c, buf, deb, cur, fin, size, prw);
 				}
 
 				break;
@@ -263,6 +285,7 @@ int main( int argc, char** argv, char** envp)
 {
 
 	signal( SIGWINCH, &resize);
+	signal( SIGINT, &end);
 
 	static struct termios old, new1;
 	int echo = 0;
@@ -284,8 +307,6 @@ int main( int argc, char** argv, char** envp)
 		exit(1);
 	}
 	
-	int over = 0;
-
 	resize();
 	prw = prompt();
 	write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
@@ -294,7 +315,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &deb, &cur, &fin, &size, &prw, &over);
+		handle(c, buf, &deb, &cur, &fin, &size, &prw);
 
 	} while(!over);
 
