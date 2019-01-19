@@ -6,10 +6,10 @@ SRC = $(wildcard *.c)
 #OBJ = $(SRC:%.c=./build/%.o)
 EXECUTABLE = $(SRC:%.c=./build/%)
 
-all : dir $(EXECUTABLE)
+all : build/ $(EXECUTABLE)
 
 
-dir:
+build/:
 	mkdir -p build
 
 
