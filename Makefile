@@ -40,3 +40,6 @@ clean:
 bigclean:
 	rm -r build
 
+remove:
+	rm -f *.o
+	rm -r build

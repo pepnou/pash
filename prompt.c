@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <wordexp.h>
 
+//http://ezprompt.net/
+
 int main(int argc, char const *argv[])
 {
 	wordexp_t ptr;
