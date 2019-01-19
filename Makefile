@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAG ?= -g -Wall -w
+CFLAG ?= -g -Wall -w -v
 LDFLAG ?= 
 
 SRC = $(wildcard *.c)
@@ -8,7 +8,7 @@ EXECUTABLE = $(SRC:.c=)
 
 all : $(EXECUTABLE)
 
-#COMMENT SIMPLIFIER CA POUR LA LE RECOPIER TOUT LE TEMPS ?
+#COMMENT SIMPLIFIER CA POUR PAS LE RECOPIER TOUT LE TEMPS ?
 #<fonction>:<fonction>.o
 #	mkdir -p build
 #	$(CC) -o ./build/$@ $^ $(LDFLAG)
@@ -18,6 +18,18 @@ pash:pash.o
 	$(CC) -o ./build/$@ $< $(LDFLAG)
 
 date:date.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+prompt:prompt.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+beep:beep.o
+	mkdir -p build
+	$(CC) -o ./build/$@ $< $(LDFLAG)
+
+ping:ping.o
 	mkdir -p build
 	$(CC) -o ./build/$@ $< $(LDFLAG)
 
