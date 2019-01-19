@@ -19,6 +19,7 @@
 #define DELLI "\033[K"
 
 int width, height;
+int over = 0;
 
 void resize()
 {
@@ -28,6 +29,23 @@ void resize()
 	height = w.ws_row;
 }
 
+//envoyer ctrl+d dans stdin (jsp comment faire)
+void end()
+{
+	//fonctionne mais attend la prochaine entré dans stdin car read est bloquant
+	//over = 1;
+
+	//pas mal mais ferme stdin --'
+	/*int fd[2];
+	pipe(fd);
+	close(0); // 0:stdin
+	dup2(fd[0], 0); // make read pipe be stdin
+	close(fd[0]);
+	fd[0] = 0;
+
+	write(fd[1], "\4", 1);*/
+}
+
 size_t prompt()
 {
 	// http://ezprompt.net/
@@ -35,25 +53,6 @@ size_t prompt()
 	write(STDOUT_FILENO, pr, strlen(pr));
 
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
-}
-
-void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
-{
-	int nbL = (*cur + *prw) / width;
-
-	for(int i = 0; i < (*prw + *cur) % width; i++)
-		write(STDOUT_FILENO, BACKC, strlen(BACKC));
-	for(int i = 0; i < nbL; i++)
-	{
-		write(STDOUT_FILENO, DELLI, strlen(DELLI));
-		write(STDOUT_FILENO, UPC, strlen(UPC));
-	}
-
-	//write(STDOUT_FILENO, RESTC, strlen(RESTC));
-	for(int i = 0; i < *prw; i++)
-		write(STDOUT_FILENO, FORWC, strlen(FORWC));
-
-	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
 void moveC(size_t* source, size_t* dest, size_t* prw)
@@ -89,11 +88,34 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 		for(int i = 0; i < cdiff; i++)
 			write(STDOUT_FILENO, FORWC, strlen(FORWC));
 	}
-	//printf("%d %d\n", ldiff, cdiff);
-	//fflush(stdout);
 }
 
-void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw, int* over)
+void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
+{
+
+	moveC(cur, fin, prw);
+
+	int nbL = (*fin + *prw) / width;
+	int nbC = (*prw + *fin) % width;
+	
+	for(int i = 0; i < nbC; i++)
+		write(STDOUT_FILENO, BACKC, strlen(BACKC));
+
+	for(int i = 0; i < nbL; i++)
+	{
+		write(STDOUT_FILENO, DELLI, strlen(DELLI));
+		write(STDOUT_FILENO, UPC, strlen(UPC));
+	}
+
+	for(int i = 0; i < *prw; i++)
+		write(STDOUT_FILENO, FORWC, strlen(FORWC));
+
+	write(STDOUT_FILENO, DELLI, strlen(DELLI));
+}
+
+
+
+void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -101,24 +123,33 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 		{
 			write(STDOUT_FILENO, &c, 1);
 			buf[*cur] = c;
+
+			if((*cur + *prw + 1) % width == 0)
+			{
+				write(STDOUT_FILENO, " ", 1);
+				write(STDOUT_FILENO, BACKC, strlen(BACKC));
+			}
+			(*cur)++;
+			(*fin)++;
 		}
 		else
 		{
 			strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
 			buf[*cur] = c;
+						
+			write(STDOUT_FILENO, &(buf[*cur]), *fin - *cur + 1);
+			
+			if((*fin + *prw + 1) % width == 0)
+			{
+				write(STDOUT_FILENO, " ", 1);
+				write(STDOUT_FILENO, BACKC, strlen(BACKC));
+			}
 
-			eraseLine(deb, cur, fin, prw);
+			(*cur)++;
+			(*fin)++;
 
-			write(STDOUT_FILENO, buf, *fin + 1);
 			moveC(fin, cur, prw);
-
-			/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
-			for(int i = 0; i < *cur + 1; i++)
-				write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
 		}
-
-		(*cur)++;
-		(*fin)++;
 	}
 	else
 	{
@@ -127,7 +158,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			//terminer le shell : ctrl + D
 			case 4:
 			{
-				*over = 1;
+				over = 1;
 				write(STDOUT_FILENO, "\n", 1);
 				break;
 			}
@@ -157,15 +188,19 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 
 				eraseLine(deb, cur, fin, prw);
 
-				write(STDOUT_FILENO, buf, *fin + 1);
-				moveC(fin, cur, prw);
+				write(STDOUT_FILENO, buf, *fin - 1);
 
-				/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				for(int i = 0; i < (*cur + *prw) % width - 1; i++)
-					write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
+				if((*fin + *prw - 1) % width == 0)
+				{
+					write(STDOUT_FILENO, " ", 1);
+					write(STDOUT_FILENO, BACKC, strlen(BACKC));
+				}
 
 				(*cur)--;
 				(*fin)--;
+
+				moveC(fin, cur, prw);
+
 				break;
 			}
 			//partie avec les flèches
@@ -183,8 +218,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur / width)
 							{
-								write(STDOUT_FILENO, UPC, strlen(UPC));
-								*cur = *cur - width;
+								/*write(STDOUT_FILENO, UPC, strlen(UPC));
+								*cur = *cur - width;*/
 							}
 							break;
 						}
@@ -192,8 +227,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*fin - *cur >= width)
 							{
-								write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
-								*cur = *cur + width;
+								/*write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
+								*cur = *cur + width;*/
 							}
 							break;
 						}
@@ -201,8 +236,10 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur < *fin)
 							{
-								write(STDOUT_FILENO, FORWC, strlen(FORWC));
+								//write(STDOUT_FILENO, FORWC, strlen(FORWC));
+								moveC( cur, fin, prw);
 								(*cur)++;
+								moveC( fin, cur, prw);
 							}
 							break;
 						}
@@ -210,21 +247,23 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						{
 							if(*cur > 0)
 							{
-								write(STDOUT_FILENO, BACKC, strlen(BACKC));
+								//write(STDOUT_FILENO, BACKC, strlen(BACKC));
+								moveC( cur, fin, prw);
 								(*cur)--;
+								moveC( fin, cur, prw);
 							}
 							break;
 						}
 						default:
 						{
-							handle(c, buf, deb, cur, fin, size, prw, over);
+							handle(c, buf, deb, cur, fin, size, prw);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, deb, cur, fin, size, prw, over);
+					handle(c, buf, deb, cur, fin, size, prw);
 				}
 
 				break;
@@ -237,10 +276,17 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 	}
 }
 
+
+
+
+
+
+
 int main( int argc, char** argv, char** envp)
 {
 
 	signal( SIGWINCH, &resize);
+	signal( SIGINT, &end);
 
 	static struct termios old, new1;
 	int echo = 0;
@@ -262,8 +308,6 @@ int main( int argc, char** argv, char** envp)
 		exit(1);
 	}
 	
-	int over = 0;
-
 	resize();
 	prw = prompt();
 	write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
@@ -272,7 +316,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &deb, &cur, &fin, &size, &prw, &over);
+		handle(c, buf, &deb, &cur, &fin, &size, &prw);
 
 	} while(!over);
 
