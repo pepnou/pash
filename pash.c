@@ -38,8 +38,8 @@ size_t prompt()
 
 void moveC(size_t* source, size_t* dest, size_t* prw)
 {
-	int lS = (*source + *prw + 1) / width;
-	int lD = (*dest + *prw + 1) / width;
+	int lS = (*source + *prw) / width;
+	int lD = (*dest + *prw) / width;
 
 	int ldiff = lD - lS;
 	
@@ -54,8 +54,8 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 			write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
 	}
 
-	int cS = (*source + *prw + 1) % width;
-	int cD = (*dest + *prw + 1) % width;
+	int cS = (*source + *prw) % width;
+	int cD = (*dest + *prw) % width;
 
 	int cdiff = cD - cS;
 
@@ -69,45 +69,25 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 		for(int i = 0; i < cdiff; i++)
 			write(STDOUT_FILENO, FORWC, strlen(FORWC));
 	}
-
-	int fd = open("log.txt", O_WRONLY | O_APPEND | O_CREAT, 0600);
-	char tmp[100];
-	sprintf(tmp, "%d, %d\n", ldiff, cdiff);
-	write(fd, tmp, strlen(tmp));
-	close(fd);
 }
 
 void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
 {
-	/*int nbL = (*cur + *prw) / width;
-
-	for(int i = 0; i < (*prw + *cur) % width; i++)
-		write(STDOUT_FILENO, BACKC, strlen(BACKC));
-	for(int i = 0; i < nbL; i++)
-	{
-		write(STDOUT_FILENO, DELLI, strlen(DELLI));
-		write(STDOUT_FILENO, UPC, strlen(UPC));
-	}
-
-	//write(STDOUT_FILENO, RESTC, strlen(RESTC));
-	for(int i = 0; i < *prw; i++)
-		write(STDOUT_FILENO, FORWC, strlen(FORWC));
-
-	write(STDOUT_FILENO, DELLI, strlen(DELLI));*/
 
 	moveC(cur, fin, prw);
 
-	int nbL = (*fin + *prw + 1) / width;
-
-	for(int i = 0; i < (*prw + *fin + 1) % width; i++)
+	int nbL = (*fin + *prw) / width;
+	int nbC = (*prw + *fin) % width;
+	
+	for(int i = 0; i < nbC; i++)
 		write(STDOUT_FILENO, BACKC, strlen(BACKC));
+
 	for(int i = 0; i < nbL; i++)
 	{
 		write(STDOUT_FILENO, DELLI, strlen(DELLI));
 		write(STDOUT_FILENO, UPC, strlen(UPC));
 	}
 
-	//write(STDOUT_FILENO, RESTC, strlen(RESTC));
 	for(int i = 0; i < *prw; i++)
 		write(STDOUT_FILENO, FORWC, strlen(FORWC));
 
@@ -130,6 +110,8 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 				write(STDOUT_FILENO, " ", 1);
 				write(STDOUT_FILENO, BACKC, strlen(BACKC));
 			}
+			(*cur)++;
+			(*fin)++;
 		}
 		else
 		{
@@ -143,20 +125,12 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 				write(STDOUT_FILENO, " ", 1);
 				write(STDOUT_FILENO, BACKC, strlen(BACKC));
 			}
-			
 
-			//eraseLine(deb, cur, fin, prw);
-			//write(STDOUT_FILENO, buf, *fin + 1);
+			(*cur)++;
+			(*fin)++;
 
 			moveC(fin, cur, prw);
-
-			/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
-			for(int i = 0; i < *cur + 1; i++)
-				write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
 		}
-
-		(*cur)++;
-		(*fin)++;
 	}
 	else
 	{
@@ -192,19 +166,22 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 					break;
 
 				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
-				sleep(1);
+
 				eraseLine(deb, cur, fin, prw);
-				sleep(1);
-				write(STDOUT_FILENO, buf, *fin + 1);
-				sleep(1);
-				moveC(fin, cur, prw);
-				sleep(1);
-				/*write(STDOUT_FILENO, RESTC, strlen(RESTC));
-				for(int i = 0; i < (*cur + *prw) % width - 1; i++)
-					write(STDOUT_FILENO, FORWC, strlen(FORWC));*/
+
+				write(STDOUT_FILENO, buf, *fin - 1);
+
+				if((*fin + *prw - 1) % width == 0)
+				{
+					write(STDOUT_FILENO, " ", 1);
+					write(STDOUT_FILENO, BACKC, strlen(BACKC));
+				}
 
 				(*cur)--;
 				(*fin)--;
+				
+				moveC(fin, cur, prw);
+
 				break;
 			}
 			//partie avec les flèches
