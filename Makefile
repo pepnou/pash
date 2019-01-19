@@ -3,33 +3,45 @@ CFLAG ?= -g -Wall -w
 LDFLAG ?= 
 
 SRC = $(wildcard *.c)
-OBJ = $(SRC:.c=.o)
-EXECUTABLE = $(SRC:.c=)
+#OBJ = $(SRC:%.c=./build/%.o)
+EXECUTABLE = $(SRC:%.c=./build/%)
 
-all : $(EXECUTABLE)
+all : dir $(EXECUTABLE)
+
+
+dir:
+	mkdir -p build
+
 
 #COMMENT SIMPLIFIER CA POUR LA LE RECOPIER TOUT LE TEMPS ?
 #<fonction>:<fonction>.o
 #	mkdir -p build
 #	$(CC) -o ./build/$@ $^ $(LDFLAG)
 
-pash:pash.o
-	mkdir -p build
-	$(CC) -o ./build/$@ $< $(LDFLAG)
+#./build/pash:./build/pash.o
+#	$(CC) -o $@ $< $(LDFLAG)
 
-date:date.o
-	mkdir -p build
-	$(CC) -o ./build/$@ $< $(LDFLAG)
 
-intro:intro.o
-	mkdir -p build
-	$(CC) -o ./build/$@ $< $(LDFLAG)
+#./build/:./build/date.o
+#	$(CC) -o $@ $< $(LDFLAG)
 
-%.o:%.c
+
+#./build/:./build/intro.o
+#	$(CC) -o $@ $< $(LDFLAG)
+
+
+./build/%.o:%.c
 	$(CC) -o $@ $(CFLAG) -c $<
+
+
+./build/%:./build/%.o
+	$(CC) -o $@ $< $(LDFLAG)
+	
 
 clean:
 	rm -f *.o
 
+
 bigclean:
 	rm -r build
+
