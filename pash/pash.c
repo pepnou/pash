@@ -115,7 +115,7 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 	if(*cur == 0)
 		return 0;
 
-	int deb, path = 0;
+	int deb = 0, path = 0;
 	for(deb = *cur - 1; deb >= 0; deb--)
 	{
 		if(buf[deb] == '|')
@@ -129,32 +129,38 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 	}
 	deb++;
 
-	char* chemin = malloc(path - deb + 1);
-	if(!chemin)
-	{
-		perror("alloc: ");
-		exit(1);
-	}
-	strncpy(chemin, &(buf[deb]), path - deb + 1);
+	char* chemin, nom;
 
-	char* nom = malloc(*fin - path);
-	if(!nom)
-	{
-		perror("alloc: ");
-		exit(1);
-	}
-	strncpy(nom, &(buf[path + 1]), *fin - path - 1);
-
-	//printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+	
 
 	historique h;
 	h.cur = 0;
 	h.liste = NULL;
 
+	struct dirent* file;
+	DIR* dir;
+
 	if( buf[deb] == '/' || buf[deb] == '.' || buf[deb] == '~') //chemin absolu ou relatif
 	{
-		struct dirent* file;
-		DIR* dir = opendir(chemin);
+		chemin = malloc(path - deb + 1);
+		if(!chemin)
+		{
+			perror("alloc: ");
+			exit(1);
+		}
+		strncpy(chemin, &(buf[deb]), path - deb + 1);
+
+		nom = malloc(*cur - path);
+		if(!nom)
+		{
+			perror("alloc: ");
+			exit(1);
+		}
+		strncpy(nom, &(buf[path + 1]), *cur - path - 1);
+
+		//printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+
+		dir = opendir(chemin);
 
 		if(!dir)
 			return 0;
@@ -176,19 +182,57 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 		}
 
 		closedir(dir);
-			
+		free(chemin);
+		free(nom);
 	}
 	else //$PATH
 	{
+		printf("\n%d, %d, %d\n", deb, path, *cur);
+		fflush(stdout);
+		nom = malloc(*cur - path + 10);
+		if(!nom)
+		{
+			perror("alloc: ");
+			exit(1);
+		}
+		strncpy(nom, &(buf[path]), *cur - path);
+		printf("\n%s , %d\n", nom, strlen(nom));
+		fflush(stdout);
 
+		char* PATH = getenv("PATH");
+		int Pdeb = 0, Pfin;
+
+		for(Pfin = 0; Pfin < strlen(PATH); Pfin++)
+		{
+			if(PATH[Pfin] == ':')
+			{
+				chemin = malloc(Pfin-Pdeb);
+				if(!chemin)
+				{
+					perror("alloc: ");
+					exit(1);
+				}
+				strncpy(chemin, &(PATH[Pdeb]), Pfin - Pdeb - 1);
+
+				printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+
+				Pdeb = Pfin + 1;
+				free(chemin);
+			}
+		}
 	}
 
-	elem* tmp = h.liste;
+	/*elem* tmp = h.liste;
+	printf("\n");
 	while(tmp != NULL)
 	{
 		printf("%s\n", tmp->buf);
 		tmp = tmp->suiv;
-	}
+	}*/
+
+	/*
+		TRAITEMENT
+	*/
 
 	supprList(h.liste);
 }
