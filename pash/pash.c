@@ -217,7 +217,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 					switch(c)
 					{
-						case 'A':
+						case 'A': //haut
 						{
 							elem* tmp = h->liste;
 							int i;
@@ -242,7 +242,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 							break;
 						}
-						case 'B':
+						case 'B': //bas
 						{
 							if(h->cur == 0)
 								break;
@@ -275,7 +275,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							moveC( fin, cur, prw);
 							break;
 						}
-						case 'C':
+						case 'C': //droite
 						{
 							if(*cur < *fin)
 							{
@@ -285,7 +285,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 							break;
 						}
-						case 'D':
+						case 'D': //gauche
 						{
 							if(*cur > 0)
 							{
@@ -295,6 +295,38 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 							break;
 						}
+						case '3': //suppr
+						{
+							read(STDIN_FILENO, &c, 1);
+							if(c != '~')
+							{
+								handle(c, buf, cur, fin, size, prw, h);
+								break;
+							}
+
+							if(*cur == *fin)
+								break;
+
+							strncpy( &(buf[*cur]), &(buf[*cur + 1]), *fin - *cur);
+
+							eraseLine( cur, fin, prw);
+
+							write(STDOUT_FILENO, buf, *fin - 1);
+
+							if((*fin + *prw - 1) % width == 0)
+							{
+								write(STDOUT_FILENO, " ", 1);
+								write(STDOUT_FILENO, BACKC, strlen(BACKC));
+							}
+
+							(*fin)--;
+
+							moveC(fin, cur, prw);
+
+							break;
+						}
+
+
 						default:
 						{
 							handle(c, buf, cur, fin, size, prw, h);
