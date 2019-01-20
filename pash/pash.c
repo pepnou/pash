@@ -110,7 +110,7 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
-int autoComp(char* buf, size_t* cur, size_t* fin)
+int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
 	if(*cur == 0)
 		return 0;
@@ -129,7 +129,7 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 	}
 	deb++;
 
-	char* chemin, nom;
+	char *chemin, *nom;
 
 	
 
@@ -173,8 +173,8 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 				if(file->d_type == DT_DIR)
 				{
 					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
-					h.liste->buf[strlen(h.liste->buf)] = '/';
 					h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
+					h.liste->buf[strlen(h.liste->buf)] = '/';
 				}
 				else
 					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
@@ -187,34 +187,54 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 	}
 	else //$PATH
 	{
-		printf("\n%d, %d, %d\n", deb, path, *cur);
-		fflush(stdout);
-		nom = malloc(*cur - path + 10);
+		nom = malloc(*cur - path + 1);
 		if(!nom)
 		{
 			perror("alloc: ");
 			exit(1);
 		}
-		strncpy(nom, &(buf[path]), *cur - path);
-		printf("\n%s , %d\n", nom, strlen(nom));
-		fflush(stdout);
+
+		strncpy( nom, &(buf[path]), *cur - path);
 
 		char* PATH = getenv("PATH");
 		int Pdeb = 0, Pfin;
 
-		for(Pfin = 0; Pfin < strlen(PATH); Pfin++)
+		for(Pfin = 0; Pfin <= strlen(PATH); Pfin++)
 		{
-			if(PATH[Pfin] == ':')
+			if(PATH[Pfin] == ':' || PATH[Pfin] == '\0')
 			{
-				chemin = malloc(Pfin-Pdeb);
+				chemin = malloc(Pfin - Pdeb + 3); // +1 pour le dernier /, +1 pour \0, +1 car on indice a partir de 0
 				if(!chemin)
 				{
 					perror("alloc: ");
 					exit(1);
 				}
-				strncpy(chemin, &(PATH[Pdeb]), Pfin - Pdeb - 1);
+				strncpy(chemin, &(PATH[Pdeb]), Pfin - Pdeb);
+				chemin[Pfin - Pdeb + 1] = '\0';
+				chemin[Pfin - Pdeb] = '/';
 
-				printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+
+				dir = opendir(chemin);
+
+				if(!dir)
+					return 0;
+
+				while((file = readdir(dir)))
+				{
+					if(!strncmp(nom, file->d_name, strlen(nom)) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
+					{
+						h.cur++;
+						if(file->d_type == DT_DIR)
+						{
+							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+							h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
+							h.liste->buf[strlen(h.liste->buf)] = '/';
+						}
+						else
+							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+					}
+				}
+
 
 				Pdeb = Pfin + 1;
 				free(chemin);
@@ -222,19 +242,45 @@ int autoComp(char* buf, size_t* cur, size_t* fin)
 		}
 	}
 
-	/*elem* tmp = h.liste;
-	printf("\n");
-	while(tmp != NULL)
+	if(h.cur == 0)
 	{
-		printf("%s\n", tmp->buf);
-		tmp = tmp->suiv;
-	}*/
+		supprList(h.liste);
+		return 0;
+	}
+	else if(h.cur == 1)
+	{
+		strncpy( &(buf[*cur + 1 + strlen(h.liste->buf)]), &(buf[*cur + 1]), *fin - *cur + 1);
+		strncpy(&(buf[*cur + 1]), h.liste->buf, strlen(h.liste->buf));
 
-	/*
-		TRAITEMENT
-	*/
+		eraseLine(cur, fin, prw);
 
-	supprList(h.liste);
+		write(STDOUT_FILENO, buf, strlen(buf) + 10);
+
+		*cur = *cur + strlen(h.liste->buf);
+		*fin = *fin + strlen(h.liste->buf);
+
+		moveC(fin, cur, prw);
+	}
+	else
+	{
+		elem* tmp = h.liste;
+		moveC(cur, fin, prw);
+
+		while(tmp != NULL)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			write(STDOUT_FILENO, nom, strlen(nom));
+			write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
+			
+			tmp = tmp->suiv;
+		}
+
+		prompt();
+		write(STDOUT_FILENO, buf, strlen(buf));
+		moveC(fin, cur, prw);
+
+		return 0;
+	}
 }
 
 void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h)
@@ -287,7 +333,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//tab
 			case 9:
 			{
-				autoComp( buf, cur, fin);
+				autoComp( buf, cur, fin, prw);
 				break;
 			}
 			//new line : ctrl + J
