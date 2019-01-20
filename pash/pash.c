@@ -44,6 +44,7 @@ void end()
 
 size_t prompt()
 {
+	// http://ezprompt.net/
 	char pr[] = "\nCC$ ";
 	write(STDOUT_FILENO, pr, strlen(pr));
 
