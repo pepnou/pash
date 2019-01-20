@@ -157,14 +157,14 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		strncpy(chemin, &(buf[deb]), path - deb + 1);
 		chemin[path - deb] = '\0';
 
-		nom = malloc(*cur - path);
+		nom = malloc(*cur - path + 1);
 		if(!nom)
 		{
 			perror("alloc: ");
 			exit(1);
 		}
-		strncpy(nom, &(buf[path + 1]), *cur - path - 1);
-		nom[*cur - path - 1] = '\0';
+		strncpy(nom, &(buf[path + 1]), *cur - path);
+		nom[*cur - path] = '\0';
 
 		fprintf( f, "%s\n%s\n", chemin, nom);
 
@@ -204,7 +204,7 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 			exit(1);
 		}
 		strncpy( nom, &(buf[path]), *cur - path);
-		nom[*cur - path - 1] = '\0';
+		nom[*cur - path] = '\0';
 
 		char* PATH = getenv("PATH");
 		int Pdeb = 0, Pfin;
