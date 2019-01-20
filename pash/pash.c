@@ -110,10 +110,8 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
-int  bubbleSort(elem* liste)
+void  bubbleSort(elem* liste)
 {
-	int max_lenght = strlen(liste->buf);
-
 	elem* tmp = liste;
 	char* swap;
 	int done;
@@ -123,9 +121,6 @@ int  bubbleSort(elem* liste)
 
 		while(tmp && tmp->suiv)
 		{
-			if(strlen(tmp->suiv->buf) > max_lenght)
-				max_lenght = strlen(tmp->suiv->buf);
-
 			if(strcmp(tmp->buf, tmp->suiv->buf) > 0)
 			{
 				done = 0;
@@ -139,11 +134,9 @@ int  bubbleSort(elem* liste)
 		}
 		tmp = liste;
 	} while(!done);
-
-	return max_lenght;
 }
 
-void display(historique h, int max_lenght, char* nom, size)
+void display(historique h, int max_lenght, size_t size, char* nom)
 {
 	elem* tmp = h.liste;
 
@@ -163,7 +156,8 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	//FILE* f = fopen("./log.txt", "a+");
 	//fprintf( f, "\n\n%s, %d\n", buf, strlen(buf));
 
-
+	int max_lenght = 0;
+	size_t total_size = 0; 
 
 
 	if(*cur == 0)
@@ -327,8 +321,8 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	{
 		moveC(cur, fin, prw);
 
-		int max = bubbleSort(h.liste);
-		display(h, max, nom);
+		bubbleSort(h.liste);
+		display(h, max_lenght, total_size, nom);
 
 		prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));

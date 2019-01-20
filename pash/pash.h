@@ -15,6 +15,6 @@ size_t prompt();
 void moveC(size_t* source, size_t* dest, size_t* prw);
 void eraseLine(size_t* cur, size_t* fin, size_t* prw);
 void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h);
-int bubbleSort(elem* liste);
-void display(historique h, int max_lenght, char* nom);
+void bubbleSort(elem* liste);
+void display(historique h, int max_lenght, size_t total_size, char* nom);
 void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw);
