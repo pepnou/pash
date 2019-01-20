@@ -1,3 +1,5 @@
+#include "liste.h"
+
 #define SAVEC "\033[s"
 #define RESTC "\033[u"
 #define UPC "\033[A"
@@ -12,5 +14,5 @@ void end();
 size_t prompt();
 void moveC(size_t* source, size_t* dest, size_t* prw);
 void eraseLine(size_t* cur, size_t* fin, size_t* prw);
-void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw);
+void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h);
 void autoComp(char* buf, size_t* cur, size_t* fin, size_t* size);

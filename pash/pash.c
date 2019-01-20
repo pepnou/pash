@@ -11,7 +11,7 @@
 
 
 #include "pash.h"
-#include "liste.h"
+
 
 
 int width, height;
@@ -114,7 +114,7 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* size)
 
 }
 
-void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw)
+void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -164,6 +164,10 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//new line : ctrl + J
 			case 10:
 			{
+				h->cur = 0;
+				if(*fin != 0)
+					ajoutDeb(&(h->liste), buf, *fin + 1);
+
 				*prw = prompt();
 
 				(*cur) = (*fin) = 0;
@@ -215,27 +219,66 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 					{
 						case 'A':
 						{
-							if(*cur / width)
+							elem* tmp = h->liste;
+							int i;
+							for(i = 0; i < h->cur; i++)
 							{
-								/*write(STDOUT_FILENO, UPC, strlen(UPC));
-								*cur = *cur - width;*/
+								if(!tmp)
+									break;
+								tmp = tmp->suiv;
+							}
+							if(tmp)
+							{
+								eraseLine( cur, fin, prw);
+
+								(h->cur)++;
+								*cur = 0;
+								*fin = tmp->size - 1;
+
+								strncpy(buf, tmp->buf, tmp->size);
+								write(STDOUT_FILENO, buf, tmp->size);
+
+								moveC( fin, cur, prw);
 							}
 							break;
 						}
 						case 'B':
 						{
-							if(*fin - *cur >= width)
+							if(h->cur == 0)
+								break;
+
+							if(h->cur == 1)
 							{
-								/*write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
-								*cur = *cur + width;*/
+								eraseLine( cur, fin, prw);
+
+								(h->cur)--;
+								*cur = *fin = 0;
+
+								break;
 							}
+
+
+							elem* tmp = h->liste;
+							int i;
+							for(i = 0; i < h->cur - 2; i++)
+								tmp = tmp->suiv;
+
+							eraseLine( cur, fin, prw);
+
+							(h->cur)--;
+							*cur = 0;
+							*fin = tmp->size - 1;
+
+							strncpy(buf, tmp->buf, tmp->size);
+							write(STDOUT_FILENO, buf, tmp->size);
+
+							moveC( fin, cur, prw);
 							break;
 						}
 						case 'C':
 						{
 							if(*cur < *fin)
 							{
-								//write(STDOUT_FILENO, FORWC, strlen(FORWC));
 								moveC( cur, fin, prw);
 								(*cur)++;
 								moveC( fin, cur, prw);
@@ -246,7 +289,6 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 						{
 							if(*cur > 0)
 							{
-								//write(STDOUT_FILENO, BACKC, strlen(BACKC));
 								moveC( cur, fin, prw);
 								(*cur)--;
 								moveC( fin, cur, prw);
@@ -255,14 +297,14 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 						}
 						default:
 						{
-							handle(c, buf, cur, fin, size, prw);
+							handle(c, buf, cur, fin, size, prw, h);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, cur, fin, size, prw);
+					handle(c, buf, cur, fin, size, prw, h);
 				}
 
 				break;
@@ -311,11 +353,15 @@ int main( int argc, char** argv, char** envp)
 	prw = prompt();
 	write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
 
+	historique h;
+	h.cur = 0;
+	h.liste = NULL;
+
 	do
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &cur, &fin, &size, &prw);
+		handle(c, buf, &cur, &fin, &size, &prw, &h);
 
 	} while(!over);
 
