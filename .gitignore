@@ -1,10 +1,6 @@
 #build
-build/
-
-#exec
-psh
-MyShell
-pash
+pash/build/
+built-in/build/
 
 # Prerequisites
 *.d
