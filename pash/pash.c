@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <signal.h>
+#include <dirent.h>
 
 
 #include "pash.h"
@@ -109,9 +110,87 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
-void autoComp(char* buf, size_t* cur, size_t* fin, size_t* size)
+int autoComp(char* buf, size_t* cur, size_t* fin)
 {
+	if(*cur == 0)
+		return 0;
 
+	int deb, path = 0;
+	for(deb = *cur - 1; deb >= 0; deb--)
+	{
+		if(buf[deb] == '|')
+			break;
+
+		if(buf[deb] == ' ' && (deb == 0 || buf[deb - 1] != '\\'))
+			break;
+
+		if(!path && buf[deb] == '/')
+			path = deb;
+	}
+	deb++;
+
+	char* chemin = malloc(path - deb + 1);
+	if(!chemin)
+	{
+		perror("alloc: ");
+		exit(1);
+	}
+	strncpy(chemin, &(buf[deb]), path - deb + 1);
+
+	char* nom = malloc(*fin - path);
+	if(!nom)
+	{
+		perror("alloc: ");
+		exit(1);
+	}
+	strncpy(nom, &(buf[path + 1]), *fin - path - 1);
+
+	//printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+
+	historique h;
+	h.cur = 0;
+	h.liste = NULL;
+
+	if( buf[deb] == '/' || buf[deb] == '.' || buf[deb] == '~') //chemin absolu ou relatif
+	{
+		struct dirent* file;
+		DIR* dir = opendir(chemin);
+
+		if(!dir)
+			return 0;
+
+		while((file = readdir(dir)))
+		{
+			if(!strncmp(nom, file->d_name, strlen(nom)) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
+			{
+				h.cur++;
+				if(file->d_type == DT_DIR)
+				{
+					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+					h.liste->buf[strlen(h.liste->buf)] = '/';
+					h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
+				}
+				else
+					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+			}
+		}
+
+		closedir(dir);
+			
+	}
+	else //$PATH
+	{
+
+	}
+
+	elem* tmp = h.liste;
+	while(tmp != NULL)
+	{
+		printf("%s\n", tmp->buf);
+		tmp = tmp->suiv;
+	}
+
+	supprList(h.liste);
 }
 
 void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h)
@@ -159,6 +238,12 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			{
 				over = 1;
 				write(STDOUT_FILENO, "\n", 1);
+				break;
+			}
+			//tab
+			case 9:
+			{
+				autoComp( buf, cur, fin);
 				break;
 			}
 			//new line : ctrl + J
@@ -400,6 +485,7 @@ int main( int argc, char** argv, char** envp)
 
 
 	tcsetattr(0, TCSANOW, &old);
+	supprList(h.liste);
 
 	exit(0);
 }
