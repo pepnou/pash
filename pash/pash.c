@@ -10,13 +10,9 @@
 #include <signal.h>
 
 
-#define SAVEC "\033[s"
-#define RESTC "\033[u"
-#define UPC "\033[A"
-#define DOWNC "\033[B"
-#define FORWC "\033[C"
-#define BACKC "\033[D"
-#define DELLI "\033[K"
+#include "pash.h"
+#include "liste.h"
+
 
 int width, height;
 int over = 0;
@@ -33,7 +29,7 @@ void resize()
 void end()
 {
 	//fonctionne mais attend la prochaine entré dans stdin car read est bloquant
-	//over = 1;
+	over = 1;
 
 	//pas mal mais ferme stdin --'
 	/*int fd[2];
@@ -41,9 +37,9 @@ void end()
 	close(0); // 0:stdin
 	dup2(fd[0], 0); // make read pipe be stdin
 	close(fd[0]);
-	fd[0] = 0;
+	fd[0] = 0;*/
 
-	write(fd[1], "\4", 1);*/
+	//write( STDIN_FILENO, "\4", 1);
 }
 
 size_t prompt()
@@ -89,7 +85,7 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 	}
 }
 
-void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
+void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 {
 
 	moveC(cur, fin, prw);
@@ -112,9 +108,12 @@ void eraseLine(size_t* deb, size_t* cur, size_t* fin, size_t* prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
+void autoComp(char* buf, size_t* cur, size_t* fin, size_t* size)
+{
 
+}
 
-void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* size, size_t* prw)
+void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -166,15 +165,15 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 			{
 				*prw = prompt();
 
-				(*cur) = (*fin) = (*deb) = 0;
+				(*cur) = (*fin) = 0;
 				write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
 				break;
 			}
 			//effacer tout : ctrl + U
 			case 21:
 			{
-				eraseLine(deb, cur, fin, prw);
-				(*cur) = (*fin) = (*deb) = 0;
+				eraseLine(cur, fin, prw);
+				(*cur) = (*fin) = 0;
 				break;
 			}
 			//effacer un caractère
@@ -185,7 +184,7 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 
 				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
 
-				eraseLine(deb, cur, fin, prw);
+				eraseLine( cur, fin, prw);
 
 				write(STDOUT_FILENO, buf, *fin - 1);
 
@@ -255,14 +254,14 @@ void handle( char c, char* buf, size_t* deb, size_t* cur, size_t* fin, size_t* s
 						}
 						default:
 						{
-							handle(c, buf, deb, cur, fin, size, prw);
+							handle(c, buf, cur, fin, size, prw);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, deb, cur, fin, size, prw);
+					handle(c, buf, cur, fin, size, prw);
 				}
 
 				break;
@@ -299,8 +298,8 @@ int main( int argc, char** argv, char** envp)
 
 
 	char c, *buf;
-	size_t deb, cur, fin, size = 1024, prw;
-	cur = fin = deb = 0;
+	size_t cur, fin, size = 1024, prw;
+	cur = fin = 0;
 	if(!(buf = malloc(size)))
 	{
 		perror("allocation du buffer : ");
@@ -315,7 +314,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &deb, &cur, &fin, &size, &prw);
+		handle(c, buf, &cur, &fin, &size, &prw);
 
 	} while(!over);
 
