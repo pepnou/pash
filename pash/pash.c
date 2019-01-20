@@ -110,6 +110,39 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
+void bubbleSort(elem* liste)
+{
+	int max_lenght = strlen(liste->buf);
+
+	elem* tmp = liste;
+	char* swap;
+	int done;
+
+	do {
+		done = 1;
+
+		while(tmp && tmp->suiv)
+		{
+			if(strlen(tmp->suiv->buf) > max_lenght)
+				max_lenght = strlen(tmp->suiv->buf);
+
+			if(strcmp(tmp->buf, tmp->suiv->buf) > 0)
+			{
+				done = 0;
+
+				swap = tmp->buf;
+				tmp->buf = tmp->suiv->buf;
+				tmp->suiv->buf = swap;
+			}
+
+			tmp = tmp->suiv;
+		}
+		tmp = liste;
+	} while(!done);
+
+	return max_lenght;
+}
+
 void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
 	//FILE* f = fopen("./log.txt", "a+");
@@ -277,6 +310,8 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	}
 	else
 	{
+		int max = bubbleSort(h.liste);
+
 		elem* tmp = h.liste;
 		moveC(cur, fin, prw);
 
