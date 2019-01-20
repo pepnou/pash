@@ -46,6 +46,4 @@ bigclean:
 	rm -r -f ./pash/build/
 	rm -r -f ./built-in/build/
 
-remove:
-	rm -f *.o
-	rm -r build
+
