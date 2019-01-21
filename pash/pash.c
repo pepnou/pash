@@ -61,6 +61,7 @@ void moveC(size_t source, size_t dest, size_t prw)
 	int lD = (dest + prw) / width;
 
 	int ldiff = lD - lS;
+	fprintf(f, "%d\n", ldiff);
 	
 	if(ldiff < 0)
 	{
@@ -77,6 +78,7 @@ void moveC(size_t source, size_t dest, size_t prw)
 	int cD = (dest + prw) % width;
 
 	int cdiff = cD - cS;
+	fprintf(f, "%d\n", cdiff);
 
 	if(cdiff < 0)
 	{
@@ -95,19 +97,19 @@ void eraseLine(size_t cur, size_t fin, size_t prw)
 
 	moveC(cur, fin, prw);
 
-	int nbL = (fin + prw) / width;
-	int nbC = (prw + fin) % width;
+	unsigned nbL = (fin + prw) / width;
+	unsigned nbC = (prw + fin) % width;
 	
-	for(int i = 0; i < nbC; i++)
+	for(unsigned i = 0; i < nbC; i++)
 		write(STDOUT_FILENO, BACKC, strlen(BACKC));
 
-	for(int i = 0; i < nbL; i++)
+	for(unsigned i = 0; i < nbL; i++)
 	{
 		write(STDOUT_FILENO, DELLI, strlen(DELLI));
 		write(STDOUT_FILENO, UPC, strlen(UPC));
 	}
 
-	for(int i = 0; i < prw; i++)
+	for(unsigned i = 0; i < prw; i++)
 		write(STDOUT_FILENO, FORWC, strlen(FORWC));
 
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
@@ -143,7 +145,7 @@ void display(historique h, int selected)
 {
 	elem* tmp = h.liste->suiv;
 	char* nom = h.liste->buf;
-	int w = width;
+	unsigned w = width;
 
 	if(w < (h.max_length + 2)*2) //2 resulat par ligne + 2 espace de separation
 	{
@@ -159,24 +161,24 @@ void display(historique h, int selected)
 	}
 	else
 	{
-		int nbpL = w / (h.max_length + 2);
-		int nbL = ceil((double)h.cur/nbpL);
+		unsigned nbpL = w / (h.max_length + 2);
+		unsigned nbL = ceil((double)h.cur/nbpL);
 
 		char** ordered = malloc(nbL*sizeof(char*));
-		for(int i = 0; i < nbL; i++)
+		for(unsigned i = 0; i < nbL; i++)
 		{
 			ordered[i] = malloc(w + 1);
-			for(int j = 0; j < w + 1; j++)
+			for(unsigned j = 0; j < w + 1; j++)
 			{
 				ordered[i][j] = ' ';
 			}
 			ordered[i][w] = '\0';
 		}
 
-		int cur = 0;
+		unsigned cur = 0;
 		while(tmp != NULL)
 		{
-			int pos = (width/nbpL) * (cur/nbL);
+			unsigned pos = (width/nbpL) * (cur/nbL);
 
 			strncpy( &(ordered[cur%nbL][pos]), nom, strlen(nom));
 			strncpy( &(ordered[cur%nbL][pos+strlen(nom)]), tmp->buf, strlen(tmp->buf));
@@ -185,11 +187,11 @@ void display(historique h, int selected)
 			cur++;
 		}
 
-		for(int i = 0; i < nbL; i++)
+		for(unsigned i = 0; i < nbL; i++)
 		{
 			if(selected >= 0 && i == selected % nbL)
 			{
-				int pos = (width/nbpL) * (selected/nbL);
+				unsigned pos = (width/nbpL) * (selected/nbL);
 
 				write(STDOUT_FILENO, "\n", 1);
 				write(STDOUT_FILENO, ordered[i], pos);
@@ -306,7 +308,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		nom[*cur - path] = '\0';
 
 		char* PATH = getenv("PATH");
-		int Pdeb = 0, Pfin;
+		unsigned Pdeb = 0, Pfin;
 
 		for(Pfin = 0; Pfin <= strlen(PATH); Pfin++)
 		{
@@ -405,16 +407,16 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
-	int w = width;
+	unsigned w = width;
 	char* nom = search->liste->buf;
 
-	int nbpL = w / (search->max_length + 2);
-	int nbL = ceil((double)search->cur/nbpL);
+	unsigned nbpL = w / (search->max_length + 2);
+	unsigned nbL = ceil((double)search->cur/nbpL);
 
 	size_t Sfin = nbL * width;
 
-	int finished = 0;
-	int selected;
+	unsigned finished = 0;
+	unsigned selected = 0;
 
 	eraseLine( *cur + *prw + 1, *fin, 0);
 	eraseLine( Sfin, Sfin, 0);
@@ -449,15 +451,23 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 				prompt();
 
 				elem* tmp = search->liste;
-				for(int i = 0; i <= selected; i++)
+				for(unsigned i = 0; i <= selected; i++)
 					tmp = tmp->suiv;
 
-				write(STDOUT_FILENO, nom, strlen(nom));
-				write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
-				*cur = *fin = strlen(tmp->buf) + strlen(nom);
+				strncpy( &(buf[*cur + strlen(tmp->buf)]), &(buf[*cur]), *fin - *cur);
+				strncpy( &(buf[*cur - strlen(nom)]), nom, strlen(nom));
+				strncpy( &(buf[*cur]), tmp->buf, strlen(tmp->buf));
 
-				strncpy( buf, nom, strlen(nom));
-				strncpy( &(buf[strlen(nom)]), tmp->buf, strlen(tmp->buf));
+				*cur += strlen(tmp->buf);
+				*fin += strlen(tmp->buf);
+
+				fprintf(f, "%ld, %ld\n", *cur, *fin);
+
+				moveC(*cur, *fin, *prw);
+
+				buf[*fin + 1] = '\0';
+
+				write(STDOUT_FILENO, buf, strlen(buf));
 
 				finished = 1;
 				break;
@@ -520,7 +530,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							Sfin = nbL * width;*/
 
-							fprintf(f, "%d, %d, %d, %d\n", w, nbpL, nbL, Sfin);
+							fprintf(f, "%d, %d, %d, %ld\n", w, nbpL, nbL, Sfin);
 
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
@@ -676,7 +686,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 						case 'A': //haut
 						{
 							elem* tmp = h->liste;
-							int i;
+							unsigned i;
 							for(i = 0; i < h->cur; i++)
 							{
 								if(!tmp)
@@ -716,7 +726,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 
 							elem* tmp = h->liste;
-							int i;
+							unsigned i;
 							for(i = 0; i < h->cur - 2; i++)
 								tmp = tmp->suiv;
 

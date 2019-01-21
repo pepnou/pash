@@ -14,7 +14,7 @@ typedef struct elem elem;
 
 typedef struct
 {
-	int cur;
+	unsigned cur;
 	elem* liste;
 	size_t max_length;
 } historique;
