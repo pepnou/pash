@@ -55,7 +55,7 @@ int main(int argc, char const *argv[])
 	if(now.tm_min < 10)
 		strcat(zero, min);*/
 	//printf(B_CYAN"test\n"CYAN"test\n");
-	printf(GROS B_MAGENTA"~%s\n"B_JAUNE" <(^_^)>"BLANC" ["ROUGE"%d"BLANC BLINK":"UNBLINK ROUGE"%d"BLANC "]"PETIT" -"RESET GROS B_VERT" %s "BLANC "=>\n\n", mypwd, now.tm_hour, now.tm_min, user);
+	printf(GROS B_CYAN"~%s\n"B_JAUNE" <(^_^)>"BLANC" ["ROUGE"%d"BLANC BLINK":"UNBLINK ROUGE"%d"BLANC "]"PETIT" -"RESET GROS B_VERT" %s "BLANC "=>\n\n", mypwd, now.tm_hour, now.tm_min, user);
 
 	return 0;
 }
