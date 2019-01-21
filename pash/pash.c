@@ -137,13 +137,13 @@ void  bubbleSort(elem* liste)
 	} while(!done);
 }
 
-void display(historique h, size_t max_lenght, int selected)
+void display(historique h, int selected)
 {
 	elem* tmp = h.liste->suiv;
 	char* nom = h.liste->buf;
 	int w = width;
 
-	if(w < (max_lenght + 2)*2) //2 resulat par ligne + 2 espace de separation
+	if(w < (h.max_length + 2)*2) //2 resulat par ligne + 2 espace de separation
 	{
 		while(tmp != NULL)
 		{
@@ -157,7 +157,7 @@ void display(historique h, size_t max_lenght, int selected)
 	}
 	else
 	{
-		int nbpL = w / (max_lenght + 2);
+		int nbpL = w / (h.max_length + 2);
 		int nbL = ceil((double)h.cur/nbpL);
 
 		char** ordered = malloc(nbL*sizeof(char*));
@@ -191,9 +191,9 @@ void display(historique h, size_t max_lenght, int selected)
 				write(STDOUT_FILENO, "\n", 1);
 				write(STDOUT_FILENO, ordered[i], pos);
 				write(STDOUT_FILENO, BACKG, strlen(BACKG));
-				write(STDOUT_FILENO, &(ordered[i][pos]), max_lenght + 2);
+				write(STDOUT_FILENO, &(ordered[i][pos]), h.max_length + 2);
 				write(STDOUT_FILENO, RESET, strlen(RESET));
-				write(STDOUT_FILENO, &(ordered[i][pos + max_lenght + 2]), width - pos - max_lenght + 2);
+				write(STDOUT_FILENO, &(ordered[i][pos + h.max_length + 2]), width - pos - h.max_length + 2);
 			}
 			else
 			{
@@ -209,7 +209,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	//FILE* f = fopen("./log.txt", "a+");
 	//fprintf( f, "\n\n%s, %d\n", buf, strlen(buf));
 
-	size_t max_lenght = 0;
+	//size_t max_lenght = 0;
 
 
 	if(*cur == 0)
@@ -234,6 +234,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	
 
 	historique* h = malloc(sizeof(historique));
+	h->max_length = 0;
 	h->cur = 0;
 	h->liste = NULL;
 
@@ -284,15 +285,15 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 					h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
 					h->liste->buf[strlen(h->liste->buf)] = '/';
 
-					if(strlen(file->d_name) - strlen(nom) + 1 > max_lenght)
-						max_lenght = strlen(file->d_name) + 1;
+					if(strlen(file->d_name) - strlen(nom) + 1 > h->max_length)
+						h->max_length = strlen(file->d_name) + 1;
 				}
 				else
 				{
 					ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
 
-					if(strlen(file->d_name) - strlen(nom) > max_lenght)
-						max_lenght = strlen(file->d_name);
+					if(strlen(file->d_name) - strlen(nom) > h->max_length)
+						h->max_length = strlen(file->d_name);
 				}
 				//fprintf(f, "%s\n", h.liste->buf);
 			}
@@ -350,15 +351,15 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 							h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
 							h->liste->buf[strlen(h->liste->buf)] = '/';
 
-							if(strlen(file->d_name) - strlen(nom) + 1 > max_lenght)
-								max_lenght = strlen(file->d_name) + 1;
+							if(strlen(file->d_name) - strlen(nom) + 1 > h->max_length)
+								h->max_length = strlen(file->d_name) + 1;
 						}
 						else
 						{
 							ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
 
-							if(strlen(file->d_name) - strlen(nom) > max_lenght)
-								max_lenght = strlen(file->d_name);
+							if(strlen(file->d_name) - strlen(nom) > h->max_length)
+								h->max_length = strlen(file->d_name);
 						}
 					}
 				}
@@ -407,7 +408,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 		bubbleSort(h->liste);
 		ajoutDeb(&(h->liste), nom, strlen(nom));
-		display(*h, max_lenght, -1);
+		display(*h, -1);
 
 		prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));

@@ -16,6 +16,7 @@ typedef struct
 {
 	int cur;
 	elem* liste;
+	size_t max_length;
 } historique;
 
 void ajoutDeb(elem** liste, char* buf, size_t size);
