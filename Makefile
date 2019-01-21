@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAG ?= -g -Wall -w -lm
+CFLAG ?= -g -Wall -lm
 LDFLAG ?= -lm
 
 #OBJ = $(SRC:%.c=./build/%.o)

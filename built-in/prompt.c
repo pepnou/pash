@@ -2,6 +2,7 @@
 #include <wordexp.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 
 //couleur normal
@@ -44,18 +45,41 @@ int main(int argc, char const *argv[])
 
 	time_t temps = time(NULL);
 	struct tm now = *localtime(&temps);
-	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME"), min[2], hour[2], mypwd[100];
-	strncpy(mypwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
-	sprintf(hour, "%d", now.tm_hour);
-	sprintf(min, "%d", now.tm_min);
-	/*char zero[2];
-	zero[0] = '0';
-	if(now.tm_hour < 10)
-		strcat(zero, hour);
-	if(now.tm_min < 10)
-		strcat(zero, min);*/
-	//printf(B_CYAN"test\n"CYAN"test\n");
-	printf(GROS B_CYAN"~%s\n"B_JAUNE" <(^_^)>"BLANC" ["ROUGE"%d"BLANC BLINK":"UNBLINK ROUGE"%d"BLANC "]"PETIT" -"RESET GROS B_VERT" %s "BLANC "=>\n\n", mypwd, now.tm_hour, now.tm_min, user);
+	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME");
+	char shortpwd[strlen(pwd) - strlen(home)];
+
+	//debut prompt
+
+	//time
+	printf(BLANC" ["ROUGE);
+	if(now.tm_hour<10)
+		printf("0");
+	printf("%d"BLANC BLINK":"UNBLINK ROUGE, now.tm_hour);
+	if(now.tm_min<10)
+		printf("0");
+	printf("%d"BLANC "]", now.tm_min);
+
+	//username : - user =>
+	printf(PETIT"-"RESET GROS B_VERT"%s" BLANC ":", user);
+
+	//chemin absolut avec raccourci ~
+	printf(GROS B_CYAN);
+	if(strlen(pwd)>strlen(home))
+	{
+		strncpy(shortpwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
+		printf("~%s\n", shortpwd);	
+	}
+	else
+	{
+		if (strlen(pwd) == strlen(home))
+			printf("~\n");
+		else
+			printf("%s\n", pwd);
+	}
+	printf(RESET);
+
+	//smiley
+	printf(B_JAUNE" <(^_^)> " BLANC BLINK"|"RESET);
 
 	return 0;
 }
