@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <dirent.h>
+#include <math.h>
 
 
 #include "pash.h"
@@ -136,28 +137,79 @@ void  bubbleSort(elem* liste)
 	} while(!done);
 }
 
-void display(historique h, int max_lenght, size_t size, char* nom)
+void display(historique h, size_t max_lenght, int selected)
 {
-	elem* tmp = h.liste;
+	elem* tmp = h.liste->suiv;
+	char* nom = h.liste->buf;
+	int w = width;
 
-	while(tmp != NULL)
+	if(w < (max_lenght + 2)*2) //2 resulat par ligne + 2 espace de separation
 	{
-		write(STDOUT_FILENO, "\n", 1);
-		if(strlen(nom) != 0)
-			write(STDOUT_FILENO, nom, strlen(nom));
-		write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
-		
-		tmp = tmp->suiv;
+		while(tmp != NULL)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			if(strlen(nom) != 0)
+				write(STDOUT_FILENO, nom, strlen(nom));
+			write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
+			
+			tmp = tmp->suiv;
+		}
+	}
+	else
+	{
+		int nbpL = w / (max_lenght + 2);
+		int nbL = ceil((double)h.cur/nbpL);
+
+		char** ordered = malloc(nbL*sizeof(char*));
+		for(int i = 0; i < nbL; i++)
+		{
+			ordered[i] = malloc(w + 1);
+			for(int j = 0; j < w + 1; j++)
+			{
+				ordered[i][j] = ' ';
+			}
+			ordered[i][w] = '\0';
+		}
+
+		int cur = 0;
+		while(tmp != NULL)
+		{
+			int pos = (width/nbpL) * (cur/nbL);
+			strncpy( &(ordered[cur%nbL][pos]), nom, strlen(nom));
+			strncpy( &(ordered[cur%nbL][pos+strlen(nom)]), tmp->buf, strlen(tmp->buf));
+			
+			tmp = tmp->suiv;
+			cur++;
+		}
+
+		for(int i = 0; i < nbL; i++)
+		{
+			if(i == selected % nbL)
+			{
+				int pos = (width/nbpL) * (selected/nbL);
+
+				write(STDOUT_FILENO, "\n", 1);
+				write(STDOUT_FILENO, ordered[i], pos);
+				write(STDOUT_FILENO, BACKG, strlen(BACKG));
+				write(STDOUT_FILENO, &(ordered[i][pos]), max_lenght + 2);
+				write(STDOUT_FILENO, RESET, strlen(RESET));
+				write(STDOUT_FILENO, &(ordered[i][pos + max_lenght + 2]), width - pos - max_lenght + 2);
+			}
+			else
+			{
+				write(STDOUT_FILENO, "\n", 1);
+				write(STDOUT_FILENO, ordered[i], width);
+			}
+		}
 	}
 }
 
-void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
+historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
 	//FILE* f = fopen("./log.txt", "a+");
 	//fprintf( f, "\n\n%s, %d\n", buf, strlen(buf));
 
-	int max_lenght = 0;
-	size_t total_size = 0; 
+	size_t max_lenght = 0;
 
 
 	if(*cur == 0)
@@ -181,9 +233,9 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 	
 
-	historique h;
-	h.cur = 0;
-	h.liste = NULL;
+	historique* h = malloc(sizeof(historique));
+	h->cur = 0;
+	h->liste = NULL;
 
 	struct dirent* file;
 	DIR* dir;
@@ -215,21 +267,33 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		dir = opendir(chemin);
 
 		if(!dir)
-			return 0;
+		{
+			supprList(h->liste);
+			free(h);
+			return NULL;
+		}
 
 		while((file = readdir(dir)))
 		{
 			if((strcmp(file->d_name, ".") != 0 && strcmp(file->d_name, "..") !=0) && (strlen(nom) == 0 || strncmp(nom, file->d_name, strlen(nom)) == 0))
 			{
-				h.cur++;
+				h->cur++;
 				if(file->d_type == DT_DIR)
 				{
-					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
-					h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
-					h.liste->buf[strlen(h.liste->buf)] = '/';
+					ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+					h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
+					h->liste->buf[strlen(h->liste->buf)] = '/';
+
+					if(strlen(file->d_name) - strlen(nom) + 1 > max_lenght)
+						max_lenght = strlen(file->d_name) + 1;
 				}
 				else
-					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+				{
+					ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+
+					if(strlen(file->d_name) - strlen(nom) > max_lenght)
+						max_lenght = strlen(file->d_name);
+				}
 				//fprintf(f, "%s\n", h.liste->buf);
 			}
 		}
@@ -269,21 +333,33 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 				dir = opendir(chemin);
 
 				if(!dir)
-					return 0;
+				{
+					Pdeb = Pfin + 1;
+					free(chemin);
+					continue;
+				}
 
 				while((file = readdir(dir)))
 				{
 					if(!strncmp(nom, file->d_name, strlen(nom)) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
 					{
-						h.cur++;
+						h->cur++;
 						if(file->d_type == DT_DIR)
 						{
-							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
-							h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
-							h.liste->buf[strlen(h.liste->buf)] = '/';
+							ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+							h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
+							h->liste->buf[strlen(h->liste->buf)] = '/';
+
+							if(strlen(file->d_name) - strlen(nom) + 1 > max_lenght)
+								max_lenght = strlen(file->d_name) + 1;
 						}
 						else
-							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+						{
+							ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+
+							if(strlen(file->d_name) - strlen(nom) > max_lenght)
+								max_lenght = strlen(file->d_name);
+						}
 					}
 				}
 
@@ -294,8 +370,12 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 	}
 
-	if(h.cur == 0);
-	else if(h.cur == 1)
+	if(h->cur == 0)
+	{
+		free(h);
+		h = NULL;
+	}
+	else if(h->cur == 1)
 	{
 		/*fprintf(f, "%d\n", strlen(h.liste->buf));
 		fprintf(f, "%d\n", *cur + 1 + strlen(h.liste->buf));
@@ -303,26 +383,31 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		fprintf(f, "%d\n", *fin - *cur + 1);
 
 		fprintf(f, "\n%s", buf);*/
-		strncpy( &(buf[*cur + strlen(h.liste->buf)]), &(buf[*cur]), *fin - *cur);
+		strncpy( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
 		//fprintf(f, "\n%s", buf);
-		strncpy(&(buf[*cur]), h.liste->buf, strlen(h.liste->buf));
+		strncpy(&(buf[*cur]), h->liste->buf, strlen(h->liste->buf));
 		//fprintf(f, "\n%s\n", buf);
 
 		eraseLine(cur, fin, prw);
 
 		write(STDOUT_FILENO, buf, strlen(buf));
 
-		*cur = *cur + strlen(h.liste->buf);
-		*fin = *fin + strlen(h.liste->buf);
+		*cur = *cur + strlen(h->liste->buf);
+		*fin = *fin + strlen(h->liste->buf);
 
 		moveC(fin, cur, prw);
+
+		supprList(h->liste);
+		free(h);
+		h = NULL;
 	}
 	else
 	{
 		moveC(cur, fin, prw);
 
-		bubbleSort(h.liste);
-		display(h, max_lenght, total_size, nom);
+		bubbleSort(h->liste);
+		ajoutDeb(&(h->liste), nom, strlen(nom));
+		display(*h, max_lenght, -1);
 
 		prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));
@@ -332,11 +417,13 @@ void autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	//fprintf(f, "\n%s, %d, %d\n", buf, *cur, *fin);
 
 	//fclose(f);
-	supprList(h.liste);
+	//supprList(h.liste);
 	free(nom);
+
+	return h;
 }
 
-void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h)
+void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -386,7 +473,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//tab
 			case 9:
 			{
-				autoComp( buf, cur, fin, prw);
+				search = autoComp( buf, cur, fin, prw);
 				break;
 			}
 			//new line : ctrl + J
@@ -528,7 +615,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							read(STDIN_FILENO, &c, 1);
 							if(c != '~')
 							{
-								handle(c, buf, cur, fin, size, prw, h);
+								handle(c, buf, cur, fin, size, prw, h, search);
 								break;
 							}
 
@@ -557,14 +644,14 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 						default:
 						{
-							handle(c, buf, cur, fin, size, prw, h);
+							handle(c, buf, cur, fin, size, prw, h, search);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, cur, fin, size, prw, h);
+					handle(c, buf, cur, fin, size, prw, h, search);
 				}
 
 				break;
@@ -621,7 +708,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &cur, &fin, &size, &prw, &h);
+		handle(c, buf, &cur, &fin, &size, &prw, &h, NULL);
 
 	} while(!over);
 
