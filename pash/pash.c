@@ -403,6 +403,154 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	return h;
 }
 
+void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
+{
+	int w = width;
+	char* nom = search->liste->buf;
+
+	int nbpL = w / (search->max_length + 2);
+	int nbL = ceil((double)search->cur/nbpL);
+
+	size_t Sfin = nbL * width;
+
+	int finished = 0;
+	int selected;
+
+	eraseLine( *cur + *prw + 1, *fin, 0);
+	eraseLine( Sfin, Sfin, 0);
+	display( *search, selected);
+
+	//fprintf(f, "%d, %d, %d, %d\n", w, nbpL, nbL, Sfin);
+
+	while(!over && !finished)
+	{
+		read(STDIN_FILENO, &c, 1);
+
+		switch(c)
+		{
+			//terminer le shell : ctrl + D
+			case 4:
+			{
+				over = 1;
+				write(STDOUT_FILENO, "\n", 1);
+				break;
+			}
+			//tab : exit selection
+			case 9:
+			{
+				finished = 1;
+				prompt();
+				write(STDOUT_FILENO, nom, strlen(nom));
+				break;
+			}
+			//new line : ctrl + J : selectionne
+			case 10:
+			{
+				prompt();
+
+				elem* tmp = search->liste;
+				for(int i = 0; i <= selected; i++)
+					tmp = tmp->suiv;
+
+				write(STDOUT_FILENO, nom, strlen(nom));
+				write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
+				*cur = *fin = strlen(tmp->buf) + strlen(nom);
+
+				strncpy( buf, nom, strlen(nom));
+				strncpy( &(buf[strlen(nom)]), tmp->buf, strlen(tmp->buf));
+
+				finished = 1;
+				break;
+			}
+			//partie avec les flèches
+			case 27:
+			{
+				read(STDIN_FILENO, &c, 1);
+
+				if(c == '[')
+				{
+					read(STDIN_FILENO, &c, 1);
+
+					switch(c)
+					{
+						case 'A': //haut
+						{
+							if(selected % nbL == 0)
+								break;
+							selected--;
+
+							/*w = width;
+
+							nbpL = w / (search->max_length + 2);
+							nbL = ceil((double)search->cur/nbpL);
+
+							Sfin = nbL * width;*/
+
+							eraseLine( Sfin, Sfin, 0);
+							display( *search, selected);
+							break;
+						}
+						case 'B': //bas
+						{
+							if((selected + 1) % nbL == 0 || selected + 1 == search->cur)
+								break;
+							selected++;
+
+							/*w = width;
+
+							nbpL = w / (search->max_length + 2);
+							nbL = ceil((double)search->cur/nbpL);
+
+							Sfin = nbL * width;*/
+
+							eraseLine( Sfin, Sfin, 0);
+							display( *search, selected);
+							break;
+						}
+						case 'C': //droite
+						{
+							if(selected + nbL >= search->cur)
+								break;
+							selected += nbL;
+
+							/*w = width;
+
+							nbpL = w / (search->max_length + 2);
+							nbL = ceil((double)search->cur/nbpL);
+
+							Sfin = nbL * width;*/
+
+							fprintf(f, "%d, %d, %d, %d\n", w, nbpL, nbL, Sfin);
+
+							eraseLine( Sfin, Sfin, 0);
+							display( *search, selected);
+							break;
+						}
+						case 'D': //gauche
+						{
+							if(selected/nbL == 0)
+								break;
+							selected -= nbL;
+
+							/*w = width;
+
+							nbpL = w / (search->max_length + 2);
+							nbL = ceil((double)search->cur/nbpL);
+
+							Sfin = nbL * width;*/
+
+							eraseLine( Sfin, Sfin, 0);
+							display( *search, selected);
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
 void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
 	if(c >= 32 && c <= 126)
@@ -454,6 +602,19 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			case 9:
 			{
 				search = autoComp( buf, cur, fin, prw);
+
+				if(search) //selectio parmi les resultats de la recherche : ctrl + q
+				{
+					read(STDIN_FILENO, &c, 1);
+					if(c == 9)
+					{
+						selection(c, buf, cur, fin, size, prw, h, search);;
+					}
+					else
+					{
+						handle(c, buf, cur, fin, size, prw, h, search);
+					}
+				}
 				break;
 			}
 			//new line : ctrl + J
@@ -461,7 +622,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			{
 				h->cur = 0;
 				if(*fin != 0)
-					ajoutDeb(&(h->liste), buf, *fin + 1);
+					ajoutDeb(&(h->liste), buf, *fin);
 
 				*prw = prompt();
 
@@ -527,13 +688,15 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 								eraseLine( *cur, *fin, *prw);
 
 								(h->cur)++;
-								*cur = 0;
-								*fin = tmp->size - 1;
+								//*cur = 0;
+								//*fin = tmp->size - 1;
+								*cur = *fin = tmp->size;
 
 								strncpy(buf, tmp->buf, tmp->size);
+								buf[tmp->size] = '\0';
 								write(STDOUT_FILENO, buf, tmp->size);
 
-								moveC( *fin, *cur, *prw);
+								//moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -552,7 +715,6 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 								break;
 							}
 
-
 							elem* tmp = h->liste;
 							int i;
 							for(i = 0; i < h->cur - 2; i++)
@@ -561,13 +723,15 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							eraseLine( *cur, *fin, *prw);
 
 							(h->cur)--;
-							*cur = 0;
-							*fin = tmp->size - 1;
+							//*cur = 0;
+							//*fin = tmp->size - 1;
+							*cur = *fin = tmp->size;
 
 							strncpy(buf, tmp->buf, tmp->size);
+							buf[tmp->size] = '\0';
 							write(STDOUT_FILENO, buf, tmp->size);
 
-							moveC( *fin, *cur, *prw);
+							//moveC( *fin, *cur, *prw);
 							break;
 						}
 						case 'C': //droite
