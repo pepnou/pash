@@ -53,6 +53,9 @@ size_t prompt()
 	write(STDOUT_FILENO, pr, strlen(pr));
 
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
+	
+	/*char* argmnts[] = {NULL}; 
+	execv("./home/enderswype/master_M2/AISE/Projet_shell/psh/buil", argmnts);*/
 }
 
 void moveC(size_t source, size_t dest, size_t prw)
