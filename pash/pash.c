@@ -15,6 +15,8 @@
 #include "pash.h"
 
 
+FILE* f;
+
 
 int width, height;
 int over = 0;
@@ -53,10 +55,10 @@ size_t prompt()
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
-void moveC(size_t* source, size_t* dest, size_t* prw)
+void moveC(size_t source, size_t dest, size_t prw)
 {
-	int lS = (*source + *prw) / width;
-	int lD = (*dest + *prw) / width;
+	int lS = (source + prw) / width;
+	int lD = (dest + prw) / width;
 
 	int ldiff = lD - lS;
 	
@@ -71,8 +73,8 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 			write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
 	}
 
-	int cS = (*source + *prw) % width;
-	int cD = (*dest + *prw) % width;
+	int cS = (source + prw) % width;
+	int cD = (dest + prw) % width;
 
 	int cdiff = cD - cS;
 
@@ -88,13 +90,13 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 	}
 }
 
-void eraseLine(size_t* cur, size_t* fin, size_t* prw)
+void eraseLine(size_t cur, size_t fin, size_t prw)
 {
 
 	moveC(cur, fin, prw);
 
-	int nbL = (*fin + *prw) / width;
-	int nbC = (*prw + *fin) % width;
+	int nbL = (fin + prw) / width;
+	int nbC = (prw + fin) % width;
 	
 	for(int i = 0; i < nbC; i++)
 		write(STDOUT_FILENO, BACKC, strlen(BACKC));
@@ -105,7 +107,7 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 		write(STDOUT_FILENO, UPC, strlen(UPC));
 	}
 
-	for(int i = 0; i < *prw; i++)
+	for(int i = 0; i < prw; i++)
 		write(STDOUT_FILENO, FORWC, strlen(FORWC));
 
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
@@ -175,6 +177,7 @@ void display(historique h, int selected)
 		while(tmp != NULL)
 		{
 			int pos = (width/nbpL) * (cur/nbL);
+
 			strncpy( &(ordered[cur%nbL][pos]), nom, strlen(nom));
 			strncpy( &(ordered[cur%nbL][pos+strlen(nom)]), tmp->buf, strlen(tmp->buf));
 			
@@ -184,7 +187,7 @@ void display(historique h, int selected)
 
 		for(int i = 0; i < nbL; i++)
 		{
-			if(i == selected % nbL)
+			if(selected >= 0 && i == selected % nbL)
 			{
 				int pos = (width/nbpL) * (selected/nbL);
 
@@ -206,12 +209,6 @@ void display(historique h, int selected)
 
 historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
-	//FILE* f = fopen("./log.txt", "a+");
-	//fprintf( f, "\n\n%s, %d\n", buf, strlen(buf));
-
-	//size_t max_lenght = 0;
-
-
 	if(*cur == 0)
 		return 0;
 
@@ -261,10 +258,6 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		strncpy(nom, &(buf[path + 1]), *cur - path);
 		nom[*cur - path] = '\0';
 
-		//fprintf( f, "%s\n%s\n", chemin, nom);
-
-		//printf("\n%s, %d\n", nom, strlen(nom));
-
 		dir = opendir(chemin);
 
 		if(!dir)
@@ -295,7 +288,6 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 					if(strlen(file->d_name) - strlen(nom) > h->max_length)
 						h->max_length = strlen(file->d_name);
 				}
-				//fprintf(f, "%s\n", h.liste->buf);
 			}
 		}
 
@@ -378,25 +370,17 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	}
 	else if(h->cur == 1)
 	{
-		/*fprintf(f, "%d\n", strlen(h.liste->buf));
-		fprintf(f, "%d\n", *cur + 1 + strlen(h.liste->buf));
-		fprintf(f, "%d\n", *cur + 1);
-		fprintf(f, "%d\n", *fin - *cur + 1);
-
-		fprintf(f, "\n%s", buf);*/
 		strncpy( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
-		//fprintf(f, "\n%s", buf);
 		strncpy(&(buf[*cur]), h->liste->buf, strlen(h->liste->buf));
-		//fprintf(f, "\n%s\n", buf);
 
-		eraseLine(cur, fin, prw);
+		eraseLine(*cur, *fin, *prw);
 
 		write(STDOUT_FILENO, buf, strlen(buf));
 
 		*cur = *cur + strlen(h->liste->buf);
 		*fin = *fin + strlen(h->liste->buf);
 
-		moveC(fin, cur, prw);
+		moveC( *fin, *cur, *prw);
 
 		supprList(h->liste);
 		free(h);
@@ -404,7 +388,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	}
 	else
 	{
-		moveC(cur, fin, prw);
+		moveC( *cur, *fin, *prw);
 
 		bubbleSort(h->liste);
 		ajoutDeb(&(h->liste), nom, strlen(nom));
@@ -412,15 +396,10 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 		prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));
-		moveC(fin, cur, prw);
+		moveC( *fin, *cur, *prw);
 	}
 
-	//fprintf(f, "\n%s, %d, %d\n", buf, *cur, *fin);
-
-	//fclose(f);
-	//supprList(h.liste);
 	free(nom);
-
 	return h;
 }
 
@@ -457,7 +436,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			(*cur)++;
 			(*fin)++;
 
-			moveC(fin, cur, prw);
+			moveC( *fin, *cur, *prw);
 		}
 	}
 	else
@@ -493,7 +472,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//effacer tout : ctrl + U
 			case 21:
 			{
-				eraseLine(cur, fin, prw);
+				eraseLine(*cur, *fin, *prw);
 				(*cur) = (*fin) = 0;
 				break;
 			}
@@ -505,7 +484,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
 
-				eraseLine( cur, fin, prw);
+				eraseLine( *cur, *fin, *prw);
 
 				write(STDOUT_FILENO, buf, *fin - 1);
 
@@ -518,7 +497,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 				(*cur)--;
 				(*fin)--;
 
-				moveC(fin, cur, prw);
+				moveC( *fin, *cur, *prw);
 
 				break;
 			}
@@ -545,7 +524,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 							if(tmp)
 							{
-								eraseLine( cur, fin, prw);
+								eraseLine( *cur, *fin, *prw);
 
 								(h->cur)++;
 								*cur = 0;
@@ -554,7 +533,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 								strncpy(buf, tmp->buf, tmp->size);
 								write(STDOUT_FILENO, buf, tmp->size);
 
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -565,7 +544,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							if(h->cur == 1)
 							{
-								eraseLine( cur, fin, prw);
+								eraseLine( *cur, *fin, *prw);
 
 								(h->cur)--;
 								*cur = *fin = 0;
@@ -579,7 +558,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							for(i = 0; i < h->cur - 2; i++)
 								tmp = tmp->suiv;
 
-							eraseLine( cur, fin, prw);
+							eraseLine( *cur, *fin, *prw);
 
 							(h->cur)--;
 							*cur = 0;
@@ -588,16 +567,16 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							strncpy(buf, tmp->buf, tmp->size);
 							write(STDOUT_FILENO, buf, tmp->size);
 
-							moveC( fin, cur, prw);
+							moveC( *fin, *cur, *prw);
 							break;
 						}
 						case 'C': //droite
 						{
 							if(*cur < *fin)
 							{
-								moveC( cur, fin, prw);
+								moveC( *cur, *fin, *prw);
 								(*cur)++;
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -605,9 +584,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 						{
 							if(*cur > 0)
 							{
-								moveC( cur, fin, prw);
+								moveC( *cur, *fin, *prw);
 								(*cur)--;
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -625,7 +604,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							strncpy( &(buf[*cur]), &(buf[*cur + 1]), *fin - *cur);
 
-							eraseLine( cur, fin, prw);
+							eraseLine( *cur, *fin, *prw);
 
 							write(STDOUT_FILENO, buf, *fin - 1);
 
@@ -637,7 +616,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							(*fin)--;
 
-							moveC(fin, cur, prw);
+							moveC( *fin, *cur, *prw);
 
 							break;
 						}
@@ -673,6 +652,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 int main( int argc, char** argv, char** envp)
 {
+	f = fopen("./log.txt", "a+");
+
+
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);
@@ -717,6 +699,9 @@ int main( int argc, char** argv, char** envp)
 
 	tcsetattr(0, TCSANOW, &old);
 	supprList(h.liste);
+
+
+	fclose(f);
 
 	exit(0);
 }

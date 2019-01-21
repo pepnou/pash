@@ -2,6 +2,9 @@
 pash/build/
 built-in/build/
 
+#log
+*log*
+
 # Prerequisites
 *.d
 
