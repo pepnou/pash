@@ -9,10 +9,13 @@
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <dirent.h>
+#include <math.h>
 
 
 #include "pash.h"
 
+
+FILE* f;
 
 
 int width, height;
@@ -52,10 +55,10 @@ size_t prompt()
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
 }
 
-void moveC(size_t* source, size_t* dest, size_t* prw)
+void moveC(size_t source, size_t dest, size_t prw)
 {
-	int lS = (*source + *prw) / width;
-	int lD = (*dest + *prw) / width;
+	int lS = (source + prw) / width;
+	int lD = (dest + prw) / width;
 
 	int ldiff = lD - lS;
 	
@@ -70,8 +73,8 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 			write(STDOUT_FILENO, DOWNC, strlen(DOWNC));
 	}
 
-	int cS = (*source + *prw) % width;
-	int cD = (*dest + *prw) % width;
+	int cS = (source + prw) % width;
+	int cD = (dest + prw) % width;
 
 	int cdiff = cD - cS;
 
@@ -87,13 +90,13 @@ void moveC(size_t* source, size_t* dest, size_t* prw)
 	}
 }
 
-void eraseLine(size_t* cur, size_t* fin, size_t* prw)
+void eraseLine(size_t cur, size_t fin, size_t prw)
 {
 
 	moveC(cur, fin, prw);
 
-	int nbL = (*fin + *prw) / width;
-	int nbC = (*prw + *fin) % width;
+	int nbL = (fin + prw) / width;
+	int nbC = (prw + fin) % width;
 	
 	for(int i = 0; i < nbC; i++)
 		write(STDOUT_FILENO, BACKC, strlen(BACKC));
@@ -104,13 +107,107 @@ void eraseLine(size_t* cur, size_t* fin, size_t* prw)
 		write(STDOUT_FILENO, UPC, strlen(UPC));
 	}
 
-	for(int i = 0; i < *prw; i++)
+	for(int i = 0; i < prw; i++)
 		write(STDOUT_FILENO, FORWC, strlen(FORWC));
 
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
-int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
+void  bubbleSort(elem* liste)
+{
+	elem* tmp = liste;
+	char* swap;
+	int done;
+
+	do {
+		done = 1;
+
+		while(tmp && tmp->suiv)
+		{
+			if(strcmp(tmp->buf, tmp->suiv->buf) > 0)
+			{
+				done = 0;
+
+				swap = tmp->buf;
+				tmp->buf = tmp->suiv->buf;
+				tmp->suiv->buf = swap;
+			}
+
+			tmp = tmp->suiv;
+		}
+		tmp = liste;
+	} while(!done);
+}
+
+void display(historique h, int selected)
+{
+	elem* tmp = h.liste->suiv;
+	char* nom = h.liste->buf;
+	int w = width;
+
+	if(w < (h.max_length + 2)*2) //2 resulat par ligne + 2 espace de separation
+	{
+		while(tmp != NULL)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			if(strlen(nom) != 0)
+				write(STDOUT_FILENO, nom, strlen(nom));
+			write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
+			
+			tmp = tmp->suiv;
+		}
+	}
+	else
+	{
+		int nbpL = w / (h.max_length + 2);
+		int nbL = ceil((double)h.cur/nbpL);
+
+		char** ordered = malloc(nbL*sizeof(char*));
+		for(int i = 0; i < nbL; i++)
+		{
+			ordered[i] = malloc(w + 1);
+			for(int j = 0; j < w + 1; j++)
+			{
+				ordered[i][j] = ' ';
+			}
+			ordered[i][w] = '\0';
+		}
+
+		int cur = 0;
+		while(tmp != NULL)
+		{
+			int pos = (width/nbpL) * (cur/nbL);
+
+			strncpy( &(ordered[cur%nbL][pos]), nom, strlen(nom));
+			strncpy( &(ordered[cur%nbL][pos+strlen(nom)]), tmp->buf, strlen(tmp->buf));
+			
+			tmp = tmp->suiv;
+			cur++;
+		}
+
+		for(int i = 0; i < nbL; i++)
+		{
+			if(selected >= 0 && i == selected % nbL)
+			{
+				int pos = (width/nbpL) * (selected/nbL);
+
+				write(STDOUT_FILENO, "\n", 1);
+				write(STDOUT_FILENO, ordered[i], pos);
+				write(STDOUT_FILENO, BACKG, strlen(BACKG));
+				write(STDOUT_FILENO, &(ordered[i][pos]), h.max_length + 2);
+				write(STDOUT_FILENO, RESET, strlen(RESET));
+				write(STDOUT_FILENO, &(ordered[i][pos + h.max_length + 2]), width - pos - h.max_length + 2);
+			}
+			else
+			{
+				write(STDOUT_FILENO, "\n", 1);
+				write(STDOUT_FILENO, ordered[i], width);
+			}
+		}
+	}
+}
+
+historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
 	if(*cur == 0)
 		return 0;
@@ -133,9 +230,10 @@ int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 	
 
-	historique h;
-	h.cur = 0;
-	h.liste = NULL;
+	historique* h = malloc(sizeof(historique));
+	h->max_length = 0;
+	h->cur = 0;
+	h->liste = NULL;
 
 	struct dirent* file;
 	DIR* dir;
@@ -149,41 +247,52 @@ int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 			exit(1);
 		}
 		strncpy(chemin, &(buf[deb]), path - deb + 1);
+		chemin[path - deb] = '\0';
 
-		nom = malloc(*cur - path);
+		nom = malloc(*cur - path + 1);
 		if(!nom)
 		{
 			perror("alloc: ");
 			exit(1);
 		}
-		strncpy(nom, &(buf[path + 1]), *cur - path - 1);
-
-		//printf("\n%s , %s\n%d , %d\n", chemin, nom, strlen(chemin), strlen(nom));
+		strncpy(nom, &(buf[path + 1]), *cur - path);
+		nom[*cur - path] = '\0';
 
 		dir = opendir(chemin);
 
 		if(!dir)
-			return 0;
+		{
+			supprList(h->liste);
+			free(h);
+			return NULL;
+		}
 
 		while((file = readdir(dir)))
 		{
-			if(!strncmp(nom, file->d_name, strlen(nom)) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
+			if((strcmp(file->d_name, ".") != 0 && strcmp(file->d_name, "..") !=0) && (strlen(nom) == 0 || strncmp(nom, file->d_name, strlen(nom)) == 0))
 			{
-				h.cur++;
+				h->cur++;
 				if(file->d_type == DT_DIR)
 				{
-					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
-					h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
-					h.liste->buf[strlen(h.liste->buf)] = '/';
+					ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+					h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
+					h->liste->buf[strlen(h->liste->buf)] = '/';
+
+					if(strlen(file->d_name) - strlen(nom) + 1 > h->max_length)
+						h->max_length = strlen(file->d_name) + 1;
 				}
 				else
-					ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+				{
+					ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+
+					if(strlen(file->d_name) - strlen(nom) > h->max_length)
+						h->max_length = strlen(file->d_name);
+				}
 			}
 		}
 
 		closedir(dir);
 		free(chemin);
-		free(nom);
 	}
 	else //$PATH
 	{
@@ -193,8 +302,8 @@ int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 			perror("alloc: ");
 			exit(1);
 		}
-
 		strncpy( nom, &(buf[path]), *cur - path);
+		nom[*cur - path] = '\0';
 
 		char* PATH = getenv("PATH");
 		int Pdeb = 0, Pfin;
@@ -217,21 +326,33 @@ int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 				dir = opendir(chemin);
 
 				if(!dir)
-					return 0;
+				{
+					Pdeb = Pfin + 1;
+					free(chemin);
+					continue;
+				}
 
 				while((file = readdir(dir)))
 				{
 					if(!strncmp(nom, file->d_name, strlen(nom)) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
 					{
-						h.cur++;
+						h->cur++;
 						if(file->d_type == DT_DIR)
 						{
-							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
-							h.liste->buf[strlen(h.liste->buf) + 1] = '\0';
-							h.liste->buf[strlen(h.liste->buf)] = '/';
+							ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom) + 1);
+							h->liste->buf[strlen(h->liste->buf) + 1] = '\0';
+							h->liste->buf[strlen(h->liste->buf)] = '/';
+
+							if(strlen(file->d_name) - strlen(nom) + 1 > h->max_length)
+								h->max_length = strlen(file->d_name) + 1;
 						}
 						else
-							ajoutDeb(&h.liste, &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+						{
+							ajoutDeb(&(h->liste), &(file->d_name[strlen(nom)]), strlen(file->d_name) - strlen(nom));
+
+							if(strlen(file->d_name) - strlen(nom) > h->max_length)
+								h->max_length = strlen(file->d_name);
+						}
 					}
 				}
 
@@ -242,48 +363,47 @@ int autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 	}
 
-	if(h.cur == 0)
+	if(h->cur == 0)
 	{
-		supprList(h.liste);
-		return 0;
+		free(h);
+		h = NULL;
 	}
-	else if(h.cur == 1)
+	else if(h->cur == 1)
 	{
-		strncpy( &(buf[*cur + 1 + strlen(h.liste->buf)]), &(buf[*cur + 1]), *fin - *cur + 1);
-		strncpy(&(buf[*cur + 1]), h.liste->buf, strlen(h.liste->buf));
+		strncpy( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
+		strncpy(&(buf[*cur]), h->liste->buf, strlen(h->liste->buf));
 
-		eraseLine(cur, fin, prw);
+		eraseLine(*cur, *fin, *prw);
 
-		write(STDOUT_FILENO, buf, strlen(buf) + 10);
+		write(STDOUT_FILENO, buf, strlen(buf));
 
-		*cur = *cur + strlen(h.liste->buf);
-		*fin = *fin + strlen(h.liste->buf);
+		*cur = *cur + strlen(h->liste->buf);
+		*fin = *fin + strlen(h->liste->buf);
 
-		moveC(fin, cur, prw);
+		moveC( *fin, *cur, *prw);
+
+		supprList(h->liste);
+		free(h);
+		h = NULL;
 	}
 	else
 	{
-		elem* tmp = h.liste;
-		moveC(cur, fin, prw);
+		moveC( *cur, *fin, *prw);
 
-		while(tmp != NULL)
-		{
-			write(STDOUT_FILENO, "\n", 1);
-			write(STDOUT_FILENO, nom, strlen(nom));
-			write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
-			
-			tmp = tmp->suiv;
-		}
+		bubbleSort(h->liste);
+		ajoutDeb(&(h->liste), nom, strlen(nom));
+		display(*h, -1);
 
 		prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));
-		moveC(fin, cur, prw);
-
-		return 0;
+		moveC( *fin, *cur, *prw);
 	}
+
+	free(nom);
+	return h;
 }
 
-void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h)
+void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
 	if(c >= 32 && c <= 126)
 	{
@@ -316,7 +436,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			(*cur)++;
 			(*fin)++;
 
-			moveC(fin, cur, prw);
+			moveC( *fin, *cur, *prw);
 		}
 	}
 	else
@@ -333,7 +453,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//tab
 			case 9:
 			{
-				autoComp( buf, cur, fin, prw);
+				search = autoComp( buf, cur, fin, prw);
 				break;
 			}
 			//new line : ctrl + J
@@ -352,7 +472,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//effacer tout : ctrl + U
 			case 21:
 			{
-				eraseLine(cur, fin, prw);
+				eraseLine(*cur, *fin, *prw);
 				(*cur) = (*fin) = 0;
 				break;
 			}
@@ -364,7 +484,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
 
-				eraseLine( cur, fin, prw);
+				eraseLine( *cur, *fin, *prw);
 
 				write(STDOUT_FILENO, buf, *fin - 1);
 
@@ -377,7 +497,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 				(*cur)--;
 				(*fin)--;
 
-				moveC(fin, cur, prw);
+				moveC( *fin, *cur, *prw);
 
 				break;
 			}
@@ -404,7 +524,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							}
 							if(tmp)
 							{
-								eraseLine( cur, fin, prw);
+								eraseLine( *cur, *fin, *prw);
 
 								(h->cur)++;
 								*cur = 0;
@@ -413,7 +533,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 								strncpy(buf, tmp->buf, tmp->size);
 								write(STDOUT_FILENO, buf, tmp->size);
 
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -424,7 +544,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							if(h->cur == 1)
 							{
-								eraseLine( cur, fin, prw);
+								eraseLine( *cur, *fin, *prw);
 
 								(h->cur)--;
 								*cur = *fin = 0;
@@ -438,7 +558,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							for(i = 0; i < h->cur - 2; i++)
 								tmp = tmp->suiv;
 
-							eraseLine( cur, fin, prw);
+							eraseLine( *cur, *fin, *prw);
 
 							(h->cur)--;
 							*cur = 0;
@@ -447,16 +567,16 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							strncpy(buf, tmp->buf, tmp->size);
 							write(STDOUT_FILENO, buf, tmp->size);
 
-							moveC( fin, cur, prw);
+							moveC( *fin, *cur, *prw);
 							break;
 						}
 						case 'C': //droite
 						{
 							if(*cur < *fin)
 							{
-								moveC( cur, fin, prw);
+								moveC( *cur, *fin, *prw);
 								(*cur)++;
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -464,9 +584,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 						{
 							if(*cur > 0)
 							{
-								moveC( cur, fin, prw);
+								moveC( *cur, *fin, *prw);
 								(*cur)--;
-								moveC( fin, cur, prw);
+								moveC( *fin, *cur, *prw);
 							}
 							break;
 						}
@@ -475,7 +595,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							read(STDIN_FILENO, &c, 1);
 							if(c != '~')
 							{
-								handle(c, buf, cur, fin, size, prw, h);
+								handle(c, buf, cur, fin, size, prw, h, search);
 								break;
 							}
 
@@ -484,7 +604,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							strncpy( &(buf[*cur]), &(buf[*cur + 1]), *fin - *cur);
 
-							eraseLine( cur, fin, prw);
+							eraseLine( *cur, *fin, *prw);
 
 							write(STDOUT_FILENO, buf, *fin - 1);
 
@@ -496,7 +616,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 							(*fin)--;
 
-							moveC(fin, cur, prw);
+							moveC( *fin, *cur, *prw);
 
 							break;
 						}
@@ -504,14 +624,14 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 						default:
 						{
-							handle(c, buf, cur, fin, size, prw, h);
+							handle(c, buf, cur, fin, size, prw, h, search);
 							break;
 						}
 					}
 				}
 				else
 				{
-					handle(c, buf, cur, fin, size, prw, h);
+					handle(c, buf, cur, fin, size, prw, h, search);
 				}
 
 				break;
@@ -532,6 +652,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 
 int main( int argc, char** argv, char** envp)
 {
+	f = fopen("./log.txt", "a+");
+
+
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);
@@ -568,7 +691,7 @@ int main( int argc, char** argv, char** envp)
 	{
 		read(STDIN_FILENO, &c, 1);
 
-		handle(c, buf, &cur, &fin, &size, &prw, &h);
+		handle(c, buf, &cur, &fin, &size, &prw, &h, NULL);
 
 	} while(!over);
 
@@ -576,6 +699,9 @@ int main( int argc, char** argv, char** envp)
 
 	tcsetattr(0, TCSANOW, &old);
 	supprList(h.liste);
+
+
+	fclose(f);
 
 	exit(0);
 }

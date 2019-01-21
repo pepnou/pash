@@ -15,6 +15,7 @@ void ajoutDeb(elem** liste, char* buf, size_t size)
 	new_elem->size = size;
 	new_elem->buf = malloc(size + 1);
 	strncpy(new_elem->buf, buf, size);
+	new_elem->buf[size] = '\0';
 	new_elem->suiv = *liste;
 
 	*liste = new_elem;
