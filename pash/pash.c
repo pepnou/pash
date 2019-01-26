@@ -417,8 +417,8 @@ void execution(char* buf)
 	fprintf(f, "%s\n", buf);
 	fprintf(f, "\n");
 
-	char *cpy, **tmp1, ***tmp2, ****WOW;
-	size_t tmp, size1, *size2, **size3;
+	char *cpy =  NULL, **tmp1 = NULL, ***tmp2 = NULL, ****WOW = NULL;
+	size_t tmp = 0, size1 = 0, *size2 = NULL, **size3 = NULL;
 
 	cpy = malloc((strlen(buf) + 1) * sizeof(char));
 	//strcpy( cpy, buf);
@@ -458,19 +458,23 @@ void execution(char* buf)
 			}
 		}
 	} while(!done);*/
-
-	int j = 0;
-	for(size_t i = 0; i < strlen(buf); i++)
+	
 	{
-		if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == '&'|| buf[i+1] == '|'|| buf[i+1] == '\0')))
-			if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0')))))
-				if(!(buf[i] == '|' && (j == 0 || buf[i+1] == '|' || buf[i+1] == '\0')))
-				{
-					cpy[j] = buf[i];
-					j++;
-				}
+		int j = 0;
+		for(int i = 0; i < strlen(buf); i++)
+		{
+			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '|| buf[i+1] == '&'|| buf[i+1] == '|'|| buf[i+1] == '\0')))
+				if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0')))))
+					if(!(buf[i] == '|' && (j == 0 || buf[i+1] == '|' || buf[i+1] == '\0')))
+					{
+						cpy[j] = buf[i];
+						j++;
+					}
+		}
+		cpy[j] = '\0';
 	}
-	cpy[j] = '\0';
+
+
 
 	fprintf(f, "%s\n", cpy);
 	fprintf(f, "\n");
@@ -490,6 +494,7 @@ void execution(char* buf)
 	size2 = malloc((size1 + 1)*sizeof(size_t));
 	size3 = malloc((size1 + 1)*sizeof(size_t*));
 
+
 	tmp = 0;
 	do {
 		if(!tmp)
@@ -506,11 +511,11 @@ void execution(char* buf)
 	fflush(f);
 
 
-	for(size_t i = 0; i < size1; i++)
+	for(unsigned i = 0; i < size1; i++)
 	{
 		size2[i] = 0;
-		for(size_t j = 0; j < strlen(tmp1[i]); j++)
-			if(!strncmp(&tmp1[i][j], "|", 1))
+		for(unsigned j = 0; j < strlen(tmp1[i]); j++)
+			if(!strncmp(&(tmp1[i][j]), "|", 1))
 				size2[i]++;
 		size2[i]++;
 		fprintf(f, "%ld\n", size2[i]);
@@ -537,7 +542,7 @@ void execution(char* buf)
 	fprintf(f, "\n");
 	fflush(f);
 
-
+/*
 	for(size_t i = 0; i < size1; i++)
 	{
 		for(size_t j = 0; j < size2[i]; j++)
@@ -572,7 +577,7 @@ void execution(char* buf)
 
 
 
-
+*/
 	// TRAITEMENT
 
 
@@ -581,7 +586,7 @@ void execution(char* buf)
 
 	for(size_t i = 0; i < size1; i++)
 	{
-		for(size_t j = 0; j < size2[i]; j++)
+/*		for(size_t j = 0; j < size2[i]; j++)
 		{
 			for(size_t k = 0; k < size3[i][j]; j++)
 			{
@@ -590,7 +595,7 @@ void execution(char* buf)
 			free(WOW[i][j]);
 			free(tmp2[i][j]);
 		}
-		free(WOW[i]);
+*/		free(WOW[i]);
 		free(tmp2[i]);
 		free(tmp1[i]);
 	}
@@ -601,7 +606,7 @@ void execution(char* buf)
 	fprintf(f, "yolo\n");
 	fflush(f);
 
-	for(size_t i = 0; i < size1; i++)
+	for(size_t i = 0; i < size1 + 1; i++)
 	{
 		free(size3[i]);
 	}
