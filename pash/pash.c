@@ -418,31 +418,56 @@ void execution(char* buf)
 	size_t tmp, size1, *size2, **size3;
 
 	cpy = malloc((strlen(buf) + 1) * sizeof(char));
-	strcpy( cpy, buf);
+	//strcpy( cpy, buf);
 
 
-	int done = 1;
+	/*int done;
 	do {
-		for(int i = 0; i < strlen(cpy); i++)
+		done = 1;
+		for(size_t i = 0; i < strlen(cpy); i++)
 		{
-			if(cpy[i] == '')
+			if(cpy[i] == ' ')
 			{
-				if(cpy[i+1] == ' ' || cpy[i+1] == '&' || cpy[i+1] == '|' || cpy[i+1] == '\0')
+				if(i == 0 || cpy[i+1] == ' ' || cpy[i+1] == '&' || cpy[i+1] == '|' || cpy[i+1] == '\0')
 				{
-					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i);
+					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
 					done = 0;
+					//i--;
 				}
 			}
 			else if(cpy[i] == '&')
 			{
-
+				if(i == 0 || (cpy[i-1] == '&' && (cpy[i+1] == '&')) || cpy[i+1] == '\0')
+				{
+					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
+					done = 0;
+					//i--;
+				}
 			}
 			else if(cpy[i] == '|')
 			{
-
+				if(i == 0 || cpy[i+1] == '|' || cpy[i+1] == '\0')
+				{
+					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
+					done = 0;
+					//i--;
+				}
 			}
 		}
-	} while(!done)
+	} while(!done);*/
+
+	int j = 0;
+	for(size_t i = 0; i < strlen(buf); i++)
+	{
+		if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == '&'|| buf[i+1] == '|'|| buf[i+1] == '\0')))
+			if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0')))))
+				if(!(buf[i] == '|' && (j == 0 || buf[i+1] == '|' || buf[i+1] == '\0')))
+				{
+					cpy[j] = buf[i];
+					j++;
+				}
+	}
+	cpy[j] = '\0';
 
 	fprintf(f, "%s\n", cpy);
 	fprintf(f, "\n");
