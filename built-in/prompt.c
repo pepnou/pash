@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
 	char shortpwd[strlen(pwd) - strlen(home)];
 
 	//debut prompt
-
+	printf("\n" GROS);
 	//time
 	printf(BLANC" ["ROUGE);
 	if(now.tm_hour<10)
@@ -79,7 +79,7 @@ int main(int argc, char const *argv[])
 	printf(RESET);
 
 	//smiley
-	printf(B_JAUNE" <(^_^)> " BLANC BLINK"|"RESET);
+	printf( GROS B_JAUNE" <(^_^)> " BLANC BLINK"| "RESET);
 
 	return 0;
 }
