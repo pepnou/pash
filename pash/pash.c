@@ -29,21 +29,10 @@ void resize()
 	height = w.ws_row;
 }
 
-//envoyer ctrl+d dans stdin (jsp comment faire)
+//mettre fin au processus enfants
 void end()
 {
-	//fonctionne mais attend la prochaine entré dans stdin car read est bloquant
-	over = 1;
-
-	//pas mal mais ferme stdin --'
-	/*int fd[2];
-	pipe(fd);
-	close(0); // 0:stdin
-	dup2(fd[0], 0); // make read pipe be stdin
-	close(fd[0]);
-	fd[0] = 0;*/
-
-	//write( STDIN_FILENO, "\4", 1);
+	
 }
 
 size_t prompt()
@@ -61,7 +50,6 @@ void moveC(size_t source, size_t dest, size_t prw)
 	int lD = (dest + prw) / width;
 
 	int ldiff = lD - lS;
-	fprintf(f, "%d\n", ldiff);
 	
 	if(ldiff < 0)
 	{
@@ -78,7 +66,6 @@ void moveC(size_t source, size_t dest, size_t prw)
 	int cD = (dest + prw) % width;
 
 	int cdiff = cD - cS;
-	fprintf(f, "%d\n", cdiff);
 
 	if(cdiff < 0)
 	{
@@ -214,7 +201,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	if(*cur == 0)
 		return 0;
 
-	int deb = 0, path = 0;
+	int deb = 0, path = -1;
 	for(deb = *cur - 1; deb >= 0; deb--)
 	{
 		if(buf[deb] == '|')
@@ -223,10 +210,12 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		if(buf[deb] == ' ' && (deb == 0 || buf[deb - 1] != '\\'))
 			break;
 
-		if(!path && buf[deb] == '/')
+		if(path == -1 && buf[deb] == '/')
 			path = deb;
 	}
 	deb++;
+	if(path == -1)
+		path = deb;
 
 	char *chemin, *nom;
 
@@ -259,6 +248,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 		strncpy(nom, &(buf[path + 1]), *cur - path);
 		nom[*cur - path] = '\0';
+		fprintf(f, "%s\n", nom);
 
 		dir = opendir(chemin);
 
@@ -306,6 +296,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 		strncpy( nom, &(buf[path]), *cur - path);
 		nom[*cur - path] = '\0';
+		fprintf(f, "%s\n", nom);
 
 		char* PATH = getenv("PATH");
 		unsigned Pdeb = 0, Pfin;
@@ -420,7 +411,11 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 	eraseLine( *cur + *prw + 1, *fin, 0);
 	eraseLine( Sfin, Sfin, 0);
+	moveC( width, width - 1, 0);
 	display( *search, selected);
+	prompt();
+	write(STDOUT_FILENO, buf, strlen(buf));
+
 
 	//fprintf(f, "%d, %d, %d, %d\n", w, nbpL, nbL, Sfin);
 
@@ -448,6 +443,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 			//new line : ctrl + J : selectionne
 			case 10:
 			{
+				moveC(*cur + *prw + width, width - 1, 0);
 				prompt();
 
 				elem* tmp = search->liste;
@@ -461,7 +457,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 				*cur += strlen(tmp->buf);
 				*fin += strlen(tmp->buf);
 
-				fprintf(f, "%ld, %ld\n", *cur, *fin);
+				//fprintf(f, "%ld, %ld\n", *cur, *fin);
 
 				moveC(*cur, *fin, *prw);
 
@@ -496,8 +492,12 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							Sfin = nbL * width;*/
 
+							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
+							moveC( width, width - 1, 0);
 							display( *search, selected);
+							prompt();
+							write(STDOUT_FILENO, buf, strlen(buf));
 							break;
 						}
 						case 'B': //bas
@@ -513,8 +513,12 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							Sfin = nbL * width;*/
 
+							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
+							moveC( width, width - 1, 0);
 							display( *search, selected);
+							prompt();
+							write(STDOUT_FILENO, buf, strlen(buf));
 							break;
 						}
 						case 'C': //droite
@@ -530,10 +534,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							Sfin = nbL * width;*/
 
-							fprintf(f, "%d, %d, %d, %ld\n", w, nbpL, nbL, Sfin);
+							//fprintf(f, "%d, %d, %d, %ld\n", w, nbpL, nbL, Sfin);
 
+							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
+							moveC( width, width - 1, 0);
 							display( *search, selected);
+							prompt();
+							write(STDOUT_FILENO, buf, strlen(buf));
 							break;
 						}
 						case 'D': //gauche
@@ -549,8 +557,12 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							Sfin = nbL * width;*/
 
+							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
+							moveC( width, width - 1, 0);
 							display( *search, selected);
+							prompt();
+							write(STDOUT_FILENO, buf, strlen(buf));
 							break;
 						}
 					}
