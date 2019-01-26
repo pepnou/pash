@@ -414,16 +414,46 @@ void execution(char* buf)
 	fprintf(f, "%s\n", buf);
 	fprintf(f, "\n");
 
-	char **tmp1, ***tmp2, ****WOW;
+	char *cpy, **tmp1, ***tmp2, ****WOW;
 	size_t tmp, size1, *size2, **size3;
 
+	cpy = malloc((strlen(buf) + 1) * sizeof(char));
+	strcpy( cpy, buf);
 
+
+	int done = 1;
+	do {
+		for(int i = 0; i < strlen(cpy); i++)
+		{
+			if(cpy[i] == '')
+			{
+				if(cpy[i+1] == ' ' || cpy[i+1] == '&' || cpy[i+1] == '|' || cpy[i+1] == '\0')
+				{
+					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i);
+					done = 0;
+				}
+			}
+			else if(cpy[i] == '&')
+			{
+
+			}
+			else if(cpy[i] == '|')
+			{
+
+			}
+		}
+	} while(!done)
+
+	fprintf(f, "%s\n", cpy);
+	fprintf(f, "\n");
 
 	size1 = 0;
-	for(size_t i = 0; i < strlen(buf) - 1; i++)
-		if(!strncmp(&buf[i], "&&", 2))
+	for(size_t i = 0; i < strlen(cpy) - 1; i++)
+		if(!strncmp(&cpy[i], "&&", 2))
 			size1++;
-
+	size1++;
+	fprintf(f, "%ld\n", size1);
+	fflush(f);
 	
 	tmp1 = malloc((size1 + 1)*sizeof(char*));
 	tmp2 = malloc((size1 + 1)*sizeof(char**));
@@ -434,12 +464,18 @@ void execution(char* buf)
 
 	tmp = 0;
 	do {
-		tmp1[tmp] = strtok(buf, "&&");
+		if(!tmp)
+			tmp1[tmp] = strtok(cpy, "&&");
+		else
+			tmp1[tmp] = strtok(NULL, "&&");
 		fprintf(f, "%s\n", tmp1[tmp]);
+		fflush(f);
 		
 		tmp++;
-	} while(tmp <= size1 + 1);
+	//} while(tmp <= size1 + 1);
+	} while(tmp1[tmp - 1]);
 	fprintf(f, "\n");
+	fflush(f);
 
 
 	for(size_t i = 0; i < size1; i++)
@@ -448,21 +484,30 @@ void execution(char* buf)
 		for(size_t j = 0; j < strlen(tmp1[i]); j++)
 			if(!strncmp(&tmp1[i][j], "|", 1))
 				size2[i]++;
+		size2[i]++;
+		fprintf(f, "%ld\n", size2[i]);
+		fflush(f);
 
 		tmp2[i] = malloc((size2[i] + 1)*sizeof(char*));
-		WOW = malloc((size2[i] + 1)*sizeof(char**));
+		WOW[i] = malloc((size2[i] + 1)*sizeof(char**));
 
 		size3[i] = malloc((size1 + 1)*sizeof(size_t*));
 
 		tmp = 0;
 		do {
-			tmp2[i][tmp] = strtok(tmp1[i], "|");
+			if(!tmp)
+				tmp2[i][tmp] = strtok(tmp1[i], "|");
+			else
+				tmp2[i][tmp] = strtok(NULL, "|");
 			fprintf(f, "%s\n", tmp2[i][tmp]);
+			fflush(f);
 			
 			tmp++;
-		} while(tmp <= size2[i] + 1);
+		//} while(tmp <= size2[i] + 1);
+		} while(tmp2[i][tmp - 1]);
 	}
 	fprintf(f, "\n");
+	fflush(f);
 
 
 	for(size_t i = 0; i < size1; i++)
@@ -473,19 +518,28 @@ void execution(char* buf)
 			for(size_t k = 0; k < strlen(tmp2[i][j]); k++)
 				if(!strncmp(&tmp2[i][j][k], " ", 1))
 					size3[i][j]++;
+			size3[i][j]++;
+			fprintf(f, "%ld\n", size3[i][j]);
+			fflush(f);
 
-			WOW = malloc((size3[i][j] + 1)*sizeof(char*));
+			WOW[i][j] = malloc((size3[i][j] + 1)*sizeof(char*));
 
 			tmp = 0;
 			do {
-				WOW[i][j][tmp] = strtok(tmp2[i][j], " ");
+				if(!tmp)
+					WOW[i][j][tmp] = strtok(tmp2[i][j], " ");
+				else
+					WOW[i][j][tmp] = strtok(NULL, " ");
 				fprintf(f, "%s\n", WOW[i][j][tmp]);
+				fflush(f);
 				
 				tmp++;
-			} while(tmp <= size3[i][j] + 1);
+			//} while(tmp <= size3[i][j] + 1);
+			} while(WOW[i][j][tmp - 1]);
 		}
 	}
 	fprintf(f, "\n");
+	fflush(f);
 
 
 
@@ -495,7 +549,7 @@ void execution(char* buf)
 
 
 
-
+	free(cpy);
 
 	for(size_t i = 0; i < size1; i++)
 	{
@@ -515,6 +569,9 @@ void execution(char* buf)
 	free(WOW);
 	free(tmp2);
 	free(tmp1);
+
+	fprintf(f, "yolo\n");
+	fflush(f);
 
 	for(size_t i = 0; i < size1; i++)
 	{
