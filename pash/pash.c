@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -32,7 +33,7 @@ void resize()
 //mettre fin au processus enfants
 void end()
 {
-	
+	//regarder ptrace
 }
 
 size_t prompt()
@@ -248,7 +249,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 		strncpy(nom, &(buf[path + 1]), *cur - path);
 		nom[*cur - path] = '\0';
-		fprintf(f, "%s\n", nom);
+		//fprintf(f, "%s\n", nom);
 
 		dir = opendir(chemin);
 
@@ -296,7 +297,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		}
 		strncpy( nom, &(buf[path]), *cur - path);
 		nom[*cur - path] = '\0';
-		fprintf(f, "%s\n", nom);
+		//fprintf(f, "%s\n", nom);
 
 		char* PATH = getenv("PATH");
 		unsigned Pdeb = 0, Pfin;
@@ -394,6 +395,134 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 	free(nom);
 	return h;
+}
+
+void execution(char* buf)
+{
+	/*int parent = fork();
+	if(!parent)
+	{
+		char** argv = malloc(sizeof(char*));
+		argv[0] = "/bin/ls";
+		int i = execv("/bin/ls", argv);
+		if(i == -1)
+			perror("execv");
+		exit(1);
+	}
+	wait(NULL);*/
+
+	fprintf(f, "%s\n", buf);
+	fprintf(f, "\n");
+
+	char **tmp1, ***tmp2, ****WOW;
+	size_t tmp, size1, *size2, **size3;
+
+
+
+	size1 = 0;
+	for(size_t i = 0; i < strlen(buf) - 1; i++)
+		if(!strncmp(&buf[i], "&&", 2))
+			size1++;
+
+	
+	tmp1 = malloc((size1 + 1)*sizeof(char*));
+	tmp2 = malloc((size1 + 1)*sizeof(char**));
+	WOW = malloc((size1 + 1)*sizeof(char***));
+
+	size2 = malloc((size1 + 1)*sizeof(size_t));
+	size3 = malloc((size1 + 1)*sizeof(size_t*));
+
+	tmp = 0;
+	do {
+		tmp1[tmp] = strtok(buf, "&&");
+		fprintf(f, "%s\n", tmp1[tmp]);
+		
+		tmp++;
+	} while(tmp <= size1 + 1);
+	fprintf(f, "\n");
+
+
+	for(size_t i = 0; i < size1; i++)
+	{
+		size2[i] = 0;
+		for(size_t j = 0; j < strlen(tmp1[i]); j++)
+			if(!strncmp(&tmp1[i][j], "|", 1))
+				size2[i]++;
+
+		tmp2[i] = malloc((size2[i] + 1)*sizeof(char*));
+		WOW = malloc((size2[i] + 1)*sizeof(char**));
+
+		size3[i] = malloc((size1 + 1)*sizeof(size_t*));
+
+		tmp = 0;
+		do {
+			tmp2[i][tmp] = strtok(tmp1[i], "|");
+			fprintf(f, "%s\n", tmp2[i][tmp]);
+			
+			tmp++;
+		} while(tmp <= size2[i] + 1);
+	}
+	fprintf(f, "\n");
+
+
+	for(size_t i = 0; i < size1; i++)
+	{
+		for(size_t j = 0; j < size2[i]; j++)
+		{
+			size3[i][j] = 0;
+			for(size_t k = 0; k < strlen(tmp2[i][j]); k++)
+				if(!strncmp(&tmp2[i][j][k], " ", 1))
+					size3[i][j]++;
+
+			WOW = malloc((size3[i][j] + 1)*sizeof(char*));
+
+			tmp = 0;
+			do {
+				WOW[i][j][tmp] = strtok(tmp2[i][j], " ");
+				fprintf(f, "%s\n", WOW[i][j][tmp]);
+				
+				tmp++;
+			} while(tmp <= size3[i][j] + 1);
+		}
+	}
+	fprintf(f, "\n");
+
+
+
+
+
+	// TRAITEMENT
+
+
+
+
+
+	for(size_t i = 0; i < size1; i++)
+	{
+		for(size_t j = 0; j < size2[i]; j++)
+		{
+			for(size_t k = 0; k < size3[i][j]; j++)
+			{
+				free(WOW[i][j][k]);
+			}
+			free(WOW[i][j]);
+			free(tmp2[i][j]);
+		}
+		free(WOW[i]);
+		free(tmp2[i]);
+		free(tmp1[i]);
+	}
+	free(WOW);
+	free(tmp2);
+	free(tmp1);
+
+	for(size_t i = 0; i < size1; i++)
+	{
+		free(size3[i]);
+	}
+	free(size3);
+
+	free(size2);
 }
 
 void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
@@ -645,6 +774,8 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 				h->cur = 0;
 				if(*fin != 0)
 					ajoutDeb(&(h->liste), buf, *fin);
+
+				execution(buf);
 
 				*prw = prompt();
 
