@@ -507,7 +507,7 @@ void execution(char* buf)
 
 	cpy = malloc((strlen(buf) + 1) * sizeof(char));
 
-	{
+	/*{
 		size_t j = 0;
 		for(size_t i = 0; i < strlen(buf); i++)
 		{
@@ -520,12 +520,79 @@ void execution(char* buf)
 					}
 		}
 		cpy[j] = '\0';
+	}*/
+
+	{
+		size_t j = 0;
+		for(size_t i = 0; i < strlen(buf); i++)
+		{
+			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '
+				|| (buf[i+1] == '&' && buf[i+2] == '&') || buf[i+1] == '|'|| buf[i+1] == '\0')))
+			{
+				cpy[j] = buf[i];
+				j++;
+			}
+		}
+		cpy[j] = '\0';
+	}
+	fprintf(f, "%s\n", cpy);
+	fprintf(f, "\n");
+
+
+
+
+	int err;
+	regex_t preg;
+	const char *str_regex = "(([:graph:]+ )+[:graph:]+)*([:graph:]+ )+[:graph:]+( &){0,1}";
+
+	err = regcomp (&preg, str_regex, REG_NOSUB | REG_EXTENDED);
+	if (err == 0)
+	{
+		int match;
+
+		match = regexec (&preg, cpy, 0, NULL, 0);
+		regfree (&preg);
+
+		/*if (match == 0)
+		{
+			printf ("%s est une adresse internet valide\n", cpy);
+		}
+		else */if (match == REG_NOMATCH)
+		{
+			write(STDOUT_FILENO, "\nSyntax error", strlen("\nSyntax error"));
+			return;
+		}
+		/*else
+		{
+			char *text;
+			size_t size;
+
+			size = regerror (err, &preg, NULL, 0);
+			text = malloc (sizeof (*text) * size);
+			if (text)
+			{
+				regerror (err, &preg, text, size);
+				fprintf (stderr, "%s\n", text);
+				free (text);
+			}
+			else
+			{
+				fprintf (stderr, "Memoire insuffisante\n");
+				exit (EXIT_FAILURE);
+			}
+		}*/
 	}
 
 
 
-	fprintf(f, "%s\n", cpy);
-	fprintf(f, "\n");
+
+
+
+
+
+
+
+	
 
 	size1 = 0;
 	for(size_t i = 0; i < strlen(cpy) - 1; i++)
