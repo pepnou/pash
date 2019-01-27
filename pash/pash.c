@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <math.h>
+#include <regex.h>
 
 
 #include "pash.h"
@@ -402,6 +403,90 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 void execution(char* buf)
 {
+	/*fprintf (f, "regexp deb\n");
+
+	int err;
+	regex_t preg;
+	const char *str_request = "   a     b     c    ";
+	//const char *str_regex = "[:space:]*\\(\\([:alpha:]\\|[:digit:]\\)+[:space:]*\\)+";
+	const char *str_regex = "[:space:]*[[:alpha:][:digit:]]+";
+
+	err = regcomp (&preg, str_regex, REG_EXTENDED);
+	if (err == 0)
+	{
+		int match;
+		size_t nmatch = 0;
+		regmatch_t *pmatch = NULL;
+
+		nmatch = preg.re_nsub;
+		pmatch = malloc (sizeof (*pmatch) * nmatch);
+		if (pmatch)
+		{
+			match = regexec (&preg, str_request, nmatch, pmatch, 0);
+
+			regfree (&preg);
+
+			if (match == 0)
+			{
+				char *site = NULL;
+				int start = pmatch[0].rm_so;
+				int end = pmatch[0].rm_eo;
+				size_t size = end - start;
+				   
+				site = malloc (sizeof (*site) * (size + 1));
+				if (site)
+				{
+					strncpy (site, &str_request[start], size);
+					site[size] = '\0';
+					fprintf ( f, "%s\n", site);
+					free (site);
+				}
+			}
+
+			else if (match == REG_NOMATCH)
+			{
+				fprintf ( f, "%s n\'est pas une adresse internet valide\n", str_request);
+			}
+
+			else
+			{
+				char *text;
+				size_t size;
+
+				size = regerror (err, &preg, NULL, 0);
+				text = malloc (sizeof (*text) * size);
+				if (text)
+				{
+					regerror (err, &preg, text, size);
+					fprintf (f, "%s\n", text);
+					free (text);
+				}
+				else
+				{
+					fprintf (stderr, "Memoire insuffisante\n");
+					exit (EXIT_FAILURE);
+				}
+			}
+		}
+		else
+		{
+			fprintf (stderr, "Memoire insuffisante\n");
+			exit (EXIT_FAILURE);
+		}
+	}
+	else
+		fprintf (f, "wat\n");
+
+	fprintf (f, "regexp fin\n");
+	fflush(f);*/
+
+
+
+
+
+
+
+
 	/*int parent = fork();
 	if(!parent)
 	{
@@ -421,50 +506,13 @@ void execution(char* buf)
 	size_t tmp = 0, size1 = 0, *size2 = NULL, **size3 = NULL;
 
 	cpy = malloc((strlen(buf) + 1) * sizeof(char));
-	//strcpy( cpy, buf);
 
-
-	/*int done;
-	do {
-		done = 1;
-		for(size_t i = 0; i < strlen(cpy); i++)
-		{
-			if(cpy[i] == ' ')
-			{
-				if(i == 0 || cpy[i+1] == ' ' || cpy[i+1] == '&' || cpy[i+1] == '|' || cpy[i+1] == '\0')
-				{
-					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
-					done = 0;
-					//i--;
-				}
-			}
-			else if(cpy[i] == '&')
-			{
-				if(i == 0 || (cpy[i-1] == '&' && (cpy[i+1] == '&')) || cpy[i+1] == '\0')
-				{
-					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
-					done = 0;
-					//i--;
-				}
-			}
-			else if(cpy[i] == '|')
-			{
-				if(i == 0 || cpy[i+1] == '|' || cpy[i+1] == '\0')
-				{
-					strncpy( &cpy[i+1], &cpy[i], strlen(cpy) - i - 1);
-					done = 0;
-					//i--;
-				}
-			}
-		}
-	} while(!done);*/
-	
 	{
-		int j = 0;
-		for(int i = 0; i < strlen(buf); i++)
+		size_t j = 0;
+		for(size_t i = 0; i < strlen(buf); i++)
 		{
 			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '|| buf[i+1] == '&'|| buf[i+1] == '|'|| buf[i+1] == '\0')))
-				if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0')))))
+				if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0' || (j > 1 && cpy[j-2] == '&'))))))
 					if(!(buf[i] == '|' && (j == 0 || buf[i+1] == '|' || buf[i+1] == '\0')))
 					{
 						cpy[j] = buf[i];
@@ -505,16 +553,15 @@ void execution(char* buf)
 		fflush(f);
 		
 		tmp++;
-	//} while(tmp <= size1 + 1);
 	} while(tmp1[tmp - 1]);
 	fprintf(f, "\n");
 	fflush(f);
 
 
-	for(unsigned i = 0; i < size1; i++)
+	for(size_t i = 0; i < size1; i++)
 	{
 		size2[i] = 0;
-		for(unsigned j = 0; j < strlen(tmp1[i]); j++)
+		for(size_t j = 0; j < strlen(tmp1[i]); j++)
 			if(!strncmp(&(tmp1[i][j]), "|", 1))
 				size2[i]++;
 		size2[i]++;
@@ -536,13 +583,12 @@ void execution(char* buf)
 			fflush(f);
 			
 			tmp++;
-		//} while(tmp <= size2[i] + 1);
 		} while(tmp2[i][tmp - 1]);
 	}
 	fprintf(f, "\n");
 	fflush(f);
 
-/*
+
 	for(size_t i = 0; i < size1; i++)
 	{
 		for(size_t j = 0; j < size2[i]; j++)
@@ -567,7 +613,6 @@ void execution(char* buf)
 				fflush(f);
 				
 				tmp++;
-			//} while(tmp <= size3[i][j] + 1);
 			} while(WOW[i][j][tmp - 1]);
 		}
 	}
@@ -577,36 +622,28 @@ void execution(char* buf)
 
 
 
-*/
+
 	// TRAITEMENT
 
 
 
 	free(cpy);
 
+	//pas besoin de free le résultat de strtok, comme ca n alloue pas de mem
 	for(size_t i = 0; i < size1; i++)
 	{
-/*		for(size_t j = 0; j < size2[i]; j++)
+		for(size_t j = 0; j < size2[i]; j++)
 		{
-			for(size_t k = 0; k < size3[i][j]; j++)
-			{
-				free(WOW[i][j][k]);
-			}
 			free(WOW[i][j]);
-			free(tmp2[i][j]);
 		}
-*/		free(WOW[i]);
+		free(WOW[i]);
 		free(tmp2[i]);
-		free(tmp1[i]);
 	}
 	free(WOW);
 	free(tmp2);
 	free(tmp1);
 
-	fprintf(f, "yolo\n");
-	fflush(f);
-
-	for(size_t i = 0; i < size1 + 1; i++)
+	for(size_t i = 0; i < size1; i++)
 	{
 		free(size3[i]);
 	}
@@ -861,11 +898,13 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//new line : ctrl + J
 			case 10:
 			{
+				buf[*fin] = '\0';
 				h->cur = 0;
 				if(*fin != 0)
+				{
 					ajoutDeb(&(h->liste), buf, *fin);
-
-				execution(buf);
+					execution(buf);
+				}
 
 				*prw = prompt();
 
