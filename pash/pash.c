@@ -526,10 +526,22 @@ void execution(char* buf)
 		size_t j = 0;
 		for(size_t i = 0; i < strlen(buf); i++)
 		{
-			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '
-				|| (buf[i+1] == '&' && buf[i+2] == '&') || buf[i+1] == '|'|| buf[i+1] == '\0')))
+			/*if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '
+				|| (buf[i+1] == '&' && buf[i+2] == '&') || buf[i+1] == '|'|| buf[i+1] == '\0')))*/
+			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '|' || buf[i+1] == ' ' || buf[i+1] == '\0')))
 			{
 				cpy[j] = buf[i];
+				j++;
+			}
+		}
+		cpy[j] = '\0';
+
+		j = 0;
+		for(size_t i = 0; i < strlen(cpy); i++)
+		{
+			if(!(buf[i] == ' ' && i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))
+			{
+				cpy[j] = cpy[i];
 				j++;
 			}
 		}
@@ -538,12 +550,18 @@ void execution(char* buf)
 	fprintf(f, "%s\n", cpy);
 	fprintf(f, "\n");
 
-
-
-
 	int err;
 	regex_t preg;
-	const char *str_regex = "(([:graph:]+ )+[:graph:]+)*([:graph:]+ )+[:graph:]+( &){0,1}";
+	char mot[200], ensemble[200], str_regex[200];
+	sprintf(mot, "[[!-%%]['-\\{][\\}~]]+");
+	sprintf(ensemble, "(%s[ ]{1})%s", mot, mot);
+	sprintf(str_regex, "(%s([&]{2}|[\\|]{1}))*%s", ensemble, ensemble);
+
+	//mot => [[!-%]['-\\{][\\}~]]+
+	//mot ou ensemble de mots => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
+	//mots ou ensembles de mots séparré par && ou | => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+(([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
+	//const char *str_regex = "(([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+";
+	//const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|(\\|)))*([:graph:]+ )+[:graph:]+( &){0,1}";
 
 	err = regcomp (&preg, str_regex, REG_NOSUB | REG_EXTENDED);
 	if (err == 0)
@@ -553,34 +571,11 @@ void execution(char* buf)
 		match = regexec (&preg, cpy, 0, NULL, 0);
 		regfree (&preg);
 
-		/*if (match == 0)
-		{
-			printf ("%s est une adresse internet valide\n", cpy);
-		}
-		else */if (match == REG_NOMATCH)
+		if (match == REG_NOMATCH)
 		{
 			write(STDOUT_FILENO, "\nSyntax error", strlen("\nSyntax error"));
 			return;
 		}
-		/*else
-		{
-			char *text;
-			size_t size;
-
-			size = regerror (err, &preg, NULL, 0);
-			text = malloc (sizeof (*text) * size);
-			if (text)
-			{
-				regerror (err, &preg, text, size);
-				fprintf (stderr, "%s\n", text);
-				free (text);
-			}
-			else
-			{
-				fprintf (stderr, "Memoire insuffisante\n");
-				exit (EXIT_FAILURE);
-			}
-		}*/
 	}
 
 
