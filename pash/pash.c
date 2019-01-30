@@ -534,14 +534,12 @@ void execution(char* buf)
 		}
 		cpy[j] = '\0';
 
-		fprintf(f, "%s\n", cpy);
-		fprintf(f, "\n");
+		// fprintf(f, "%s\n", cpy);
+		// fprintf(f, "\n");
 
 		j = 0;
 		for(size_t i = 0; i < strlen(cpy); i++)
 		{
-			//if(!(buf[i] == ' ' && i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))
-			//if(!(cpy[i] == ' ' && (cpy[i+1] == '|' || (i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))))
 			if(!(cpy[i] == ' ' && (cpy[i+1] == '|' || cpy[i+1] == '&' || cpy[i-1] == '|' || cpy[i-1] == '&')))
 			{
 				cpy[j] = cpy[i];
@@ -550,18 +548,24 @@ void execution(char* buf)
 		}
 		cpy[j] = '\0';
 
-		fprintf(f, "%s\n", cpy);
-		fprintf(f, "\n");
+		// fprintf(f, "%s\n", cpy);
+		// fprintf(f, "\n");
 	}
+
+	int background = 0;
+	if(cpy[strlen(cpy) - 1] == '&')
+	{
+		background = 1;
+		cpy[strlen(cpy) - 1] == '\0';
+	}
+
 
 	int err;
 	regex_t preg;
 	char mot[200], ensemble[200], str_regex[200];
 	sprintf(mot, "[^&\\|\n\t\v ]+");
 	sprintf(ensemble, "(%s[ ]{1})*%s", mot, mot);
-	sprintf(str_regex, "^(%s([&]{2}|[\\|]{1}))*%s[&]{0,1}$", ensemble, ensemble);
-
-	//const char *str_regex = "^[^&\\|\n\t\v ]+$";
+	sprintf(str_regex, "^(%s([&]{2}|[\\|]{1}))*%s$", ensemble, ensemble);
 
 	err = regcomp (&preg, str_regex, REG_EXTENDED);
 	if (err == 0)
