@@ -526,9 +526,7 @@ void execution(char* buf)
 		size_t j = 0;
 		for(size_t i = 0; i < strlen(buf); i++)
 		{
-			/*if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '
-				|| (buf[i+1] == '&' && buf[i+2] == '&') || buf[i+1] == '|'|| buf[i+1] == '\0')))*/
-			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '|' || buf[i+1] == ' ' || buf[i+1] == '\0')))
+			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || buf[i+1] == ' ' || buf[i+1] == '\0')))
 			{
 				cpy[j] = buf[i];
 				j++;
@@ -536,39 +534,34 @@ void execution(char* buf)
 		}
 		cpy[j] = '\0';
 
+		fprintf(f, "%s\n", cpy);
+		fprintf(f, "\n");
+
 		j = 0;
 		for(size_t i = 0; i < strlen(cpy); i++)
 		{
-			if(!(buf[i] == ' ' && i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))
+			//if(!(buf[i] == ' ' && i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))
+			//if(!(cpy[i] == ' ' && (cpy[i+1] == '|' || (i < strlen(cpy) - 2 && ((cpy[i-1] == '&' && cpy[i+1] != '&') || (cpy[i-1] != '&' && cpy[i+1] == '&'))))))
+			if(!(cpy[i] == ' ' && (cpy[i+1] == '|' || cpy[i+1] == '&' || cpy[i-1] == '|' || cpy[i-1] == '&')))
 			{
 				cpy[j] = cpy[i];
 				j++;
 			}
 		}
 		cpy[j] = '\0';
+
+		fprintf(f, "%s\n", cpy);
+		fprintf(f, "\n");
 	}
-	fprintf(f, "%s\n", cpy);
-	fprintf(f, "\n");
 
 	int err;
 	regex_t preg;
-	//char mot[200], ensemble[200], str_regex[200];
-	/*sprintf(mot, "[[!-%%]['-\\{][\\}~]]+");
+	char mot[200], ensemble[200], str_regex[200];
+	sprintf(mot, "[^&\\|\n\t\v ]+");
 	sprintf(ensemble, "(%s[ ]{1})*%s", mot, mot);
-	sprintf(str_regex, "(%s([&]{2}|[\\|]{1}))*%s([ ]{1}[&]{1}){0,1}", ensemble, ensemble);*/
-	//sprintf(str_regex, "[[^&\\|][:graphe:]]*");
-	//sprintf(str_regex, "[[:graphe:][^&\\|]]*");
-	//sprintf(str_regex, "[^&\\|:graphe:]*");
-	/*sprintf(str_regex, "[^&]+");
-	fprintf(f, "%s\n", str_regex);
-	fprintf(f, "\n");*/
+	sprintf(str_regex, "^(%s([&]{2}|[\\|]{1}))*%s[&]{0,1}$", ensemble, ensemble);
 
-	//mot => [[!-%]['-\\{][\\}~]]+
-	//mot ou ensemble de mots => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
-	//mots ou ensembles de mots séparré par && ou | => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+(([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
-	//const char *str_regex = "(([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+";
-	//const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|(\\|)))*([:graph:]+ )+[:graph:]+( &){0,1}";
-	const char *str_regex = "^[^&\\|\n\t\v ]+$";
+	//const char *str_regex = "^[^&\\|\n\t\v ]+$";
 
 	err = regcomp (&preg, str_regex, REG_EXTENDED);
 	if (err == 0)
@@ -578,9 +571,6 @@ void execution(char* buf)
 
 		match = regexec (&preg, cpy, 1, matchs, 0);
 		regfree (&preg);
-
-		fprintf(f, "%d\n", strlen(cpy));
-		fprintf(f, "%d : %d\n", matchs[0].rm_so, matchs[0].rm_eo);
 
 		if (match == REG_NOMATCH || matchs[0].rm_so != 0 || matchs[0].rm_eo != strlen(cpy))
 		{
