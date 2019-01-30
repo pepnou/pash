@@ -552,26 +552,37 @@ void execution(char* buf)
 
 	int err;
 	regex_t preg;
-	char mot[200], ensemble[200], str_regex[200];
-	sprintf(mot, "[[!-%%]['-\\{][\\}~]]+");
-	sprintf(ensemble, "(%s[ ]{1})%s", mot, mot);
-	sprintf(str_regex, "(%s([&]{2}|[\\|]{1}))*%s", ensemble, ensemble);
+	//char mot[200], ensemble[200], str_regex[200];
+	/*sprintf(mot, "[[!-%%]['-\\{][\\}~]]+");
+	sprintf(ensemble, "(%s[ ]{1})*%s", mot, mot);
+	sprintf(str_regex, "(%s([&]{2}|[\\|]{1}))*%s([ ]{1}[&]{1}){0,1}", ensemble, ensemble);*/
+	//sprintf(str_regex, "[[^&\\|][:graphe:]]*");
+	//sprintf(str_regex, "[[:graphe:][^&\\|]]*");
+	//sprintf(str_regex, "[^&\\|:graphe:]*");
+	/*sprintf(str_regex, "[^&]+");
+	fprintf(f, "%s\n", str_regex);
+	fprintf(f, "\n");*/
 
 	//mot => [[!-%]['-\\{][\\}~]]+
 	//mot ou ensemble de mots => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
 	//mots ou ensembles de mots séparré par && ou | => ([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+(([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+
 	//const char *str_regex = "(([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+([&]{2})|([\\|]{1}))*([[!-%]['-\\{][\\}~]]+[ ])*[[!-%]['-\\{][\\}~]]+";
 	//const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|(\\|)))*([:graph:]+ )+[:graph:]+( &){0,1}";
+	const char *str_regex = "^[^&\\|\n\t\v ]+$";
 
-	err = regcomp (&preg, str_regex, REG_NOSUB | REG_EXTENDED);
+	err = regcomp (&preg, str_regex, REG_EXTENDED);
 	if (err == 0)
 	{
 		int match;
+		regmatch_t matchs[1];
 
-		match = regexec (&preg, cpy, 0, NULL, 0);
+		match = regexec (&preg, cpy, 1, matchs, 0);
 		regfree (&preg);
 
-		if (match == REG_NOMATCH)
+		fprintf(f, "%d\n", strlen(cpy));
+		fprintf(f, "%d : %d\n", matchs[0].rm_so, matchs[0].rm_eo);
+
+		if (match == REG_NOMATCH || matchs[0].rm_so != 0 || matchs[0].rm_eo != strlen(cpy))
 		{
 			write(STDOUT_FILENO, "\nSyntax error", strlen("\nSyntax error"));
 			return;
