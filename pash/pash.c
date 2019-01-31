@@ -12,9 +12,39 @@
 #include <dirent.h>
 #include <math.h>
 #include <regex.h>
+#include <time.h>
 
 
 #include "pash.h"
+
+//couleur normal
+#define NOIR "\e[30m"
+#define ROUGE "\e[31m"
+#define VERT "\e[32m"
+#define JAUNE "\e[33m"
+#define BLEUE "\e[34m"
+#define MAGENTA "\e[35m"
+#define CYAN "\e[36m"
+#define BLANC "\e[37m"
+
+//couleur bright
+#define B_NOIR "\e[90m"
+#define B_ROUGE "\e[91m"
+#define B_VERT "\e[92m"
+#define B_JAUNE "\e[93m"
+#define B_BLEUE "\e[94m"
+#define B_MAGENTA "\e[95m"
+#define B_CYAN "\e[96m"
+#define B_BLANC "\e[97m"
+
+#define RESET "\e[0m"
+#define GROS "\e[1m"
+#define PETIT "\e[2m"
+#define ITALIC "\e[3m"
+#define BLINK "\e[5m"
+#define UNBLINK "\e[25m"
+
+char *smiley = "<(^_^)>";
 
 
 FILE* f;
@@ -22,6 +52,22 @@ FILE* f;
 
 int width, height;
 int over = 0;
+
+void intro()
+{
+	int parent = fork();
+
+	if(!parent)
+	{
+		char ** argv = malloc(sizeof(char*));
+		argv[0] = "/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro";
+		int i = execv("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro", argv);
+		if( i == -1)
+			perror("execv");
+		exit(1);
+	}
+	wait(NULL);
+}
 
 void resize()
 {
@@ -37,16 +83,117 @@ void end()
 	//regarder ptrace
 }
 
-size_t prompt()
+size_t prompt_old()
 {
 	// http://ezprompt.net/
 	char pr[] = "\nCC$ ";
 	write(STDOUT_FILENO, pr, strlen(pr));
 
 	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
-	
-	/*char* argmnts[] = {NULL}; 
-	execv("./home/enderswype/master_M2/AISE/Projet_shell/psh/buil", argmnts);*/
+}
+
+size_t prompt()
+{
+	// http://ezprompt.net/
+		/*wordexp_t ptr;
+	wordexp("PATH", &ptr, WRDE_UNDEF);
+	printf("%s\n", ptr);*/
+	size_t size = 0;
+	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME");
+	struct winsize w;
+	ioctl(0, TIOCGWINSZ, &w);
+	/*char *base_color, *time_color, *user_color, *pwd_color, *smiley_color, *smiley_face;
+	size_t size = 0;
+	ssize_t lu;
+	FILE *file = fopen("./built-in/build/prompt_param.txt", "r");
+	for (int i = 0; i < 6; ++i)
+	{
+		switch (i)
+		{
+			case 0 :
+				lu = getline(&base_color, &size, file);
+				base_color[-1] = '\0';
+				break;
+
+			case 1 :
+				lu = getline(&time_color, &size, file);
+				break;
+
+			case 2 :
+				lu = getline(&user_color, &size, file);
+				break;
+
+			case 3 :
+				lu = getline(&pwd_color, &size, file);
+				break;
+
+			case 4 :
+				lu = getline(&smiley_color, &size, file);
+				break;
+
+			case 5 :
+				lu = getline(&smiley_face, &size, file);
+				break;
+		}
+	}
+	printf("%s bonsoir", base_color);*/
+
+	time_t temps = time(NULL);
+	struct tm now = *localtime(&temps);
+	char shortpwd[strlen(pwd) - strlen(home)];
+
+	//debut prompt
+	printf("\n" GROS);
+	//time
+	printf(BLANC"["ROUGE);
+	if(now.tm_hour<10)
+		printf("0");
+	printf("%d"BLANC BLINK":"UNBLINK ROUGE, now.tm_hour);
+	if(now.tm_min<10)
+		printf("0");
+	printf("%d"BLANC "]", now.tm_min);
+	size +=8;
+
+	//username : - user =>
+	printf(PETIT"-"RESET GROS B_VERT"%s" BLANC ":", user);
+	size += 2+strlen(user);
+
+	//chemin absolut avec raccourci ~
+	printf(GROS B_CYAN);
+	if(strlen(pwd)>strlen(home))
+	{
+		strncpy(shortpwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
+		printf("~%s\n", shortpwd);	
+		size += 2+strlen(pwd);
+	}
+	else
+	{
+		if (strlen(pwd) == strlen(home))
+		{
+			printf("~\n");
+			size += 2;
+		}
+		else
+		{
+			printf("%s\n", pwd);
+			size += 1 + strlen(pwd);
+		}
+	}
+	size -= 2;
+	if(size <= w.ws_col)
+		size += w.ws_col - size;
+	else
+		size += (w.ws_col - (size%w.ws_col));
+
+	printf(RESET);
+
+	//smiley
+	printf( GROS B_JAUNE" %s " BLANC BLINK"| "RESET, smiley);
+	size += strlen(smiley) + 4;
+	//printf(" %d", size);
+	fflush(stdout);
+
+	return size + 3;
 }
 
 void moveC(size_t source, size_t dest, size_t prw)
@@ -543,7 +690,7 @@ void execution(char* buf)
 
 	int err;
 	regex_t preg;
-	const char *str_regex = "(([:graph:]+ )+[:graph:]+)*([:graph:]+ )+[:graph:]+( &){0,1}";
+	const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|\\|))*([:graph:]+ )+[:graph:]+( &){0,1}";
 
 	err = regcomp (&preg, str_regex, REG_NOSUB | REG_EXTENDED);
 	if (err == 0)
@@ -582,11 +729,6 @@ void execution(char* buf)
 			}
 		}*/
 	}
-
-
-
-
-
 
 
 
@@ -1167,7 +1309,7 @@ int main( int argc, char** argv, char** envp)
 {
 	f = fopen("./log.txt", "a+");
 
-
+	intro();
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);

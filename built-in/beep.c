@@ -16,20 +16,29 @@ int main()
 {
     struct timeval t1, t2;
     long long t;
-    int size = 8;
-    int song[] = {1, 1, 0, 1, 1, 0, 1, 1};
+    int size = 6;
+    int song[] = {1, 1, 1, 0, 1, 1};
 	
     long microseconds = 500000;
+
+    printf("\nPrompt is waking up");
 	
 	for (int i = 0; i < size; ++i)
 	{
 		if(song[i] == 0)
+		{
 		    nsleep(microseconds);
+		   	printf(".");
+		   	fflush(stdout);
+		}
 		else
 		{
-			printf("\a\n");
+			printf(".\a");
+			fflush(stdout);
 			nsleep(microseconds);
 		}
 	}
+
+	printf("\n\n");
 
 }
