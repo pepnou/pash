@@ -550,102 +550,6 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 
 void execution(char* buf)
 {
-	/*fprintf (f, "regexp deb\n");
-
-	int err;
-	regex_t preg;
-	const char *str_request = "   a     b     c    ";
-	//const char *str_regex = "[:space:]*\\(\\([:alpha:]\\|[:digit:]\\)+[:space:]*\\)+";
-	const char *str_regex = "[:space:]*[[:alpha:][:digit:]]+";
-
-	err = regcomp (&preg, str_regex, REG_EXTENDED);
-	if (err == 0)
-	{
-		int match;
-		size_t nmatch = 0;
-		regmatch_t *pmatch = NULL;
-
-		nmatch = preg.re_nsub;
-		pmatch = malloc (sizeof (*pmatch) * nmatch);
-		if (pmatch)
-		{
-			match = regexec (&preg, str_request, nmatch, pmatch, 0);
-
-			regfree (&preg);
-
-			if (match == 0)
-			{
-				char *site = NULL;
-				int start = pmatch[0].rm_so;
-				int end = pmatch[0].rm_eo;
-				size_t size = end - start;
-				   
-				site = malloc (sizeof (*site) * (size + 1));
-				if (site)
-				{
-					strncpy (site, &str_request[start], size);
-					site[size] = '\0';
-					fprintf ( f, "%s\n", site);
-					free (site);
-				}
-			}
-
-			else if (match == REG_NOMATCH)
-			{
-				fprintf ( f, "%s n\'est pas une adresse internet valide\n", str_request);
-			}
-
-			else
-			{
-				char *text;
-				size_t size;
-
-				size = regerror (err, &preg, NULL, 0);
-				text = malloc (sizeof (*text) * size);
-				if (text)
-				{
-					regerror (err, &preg, text, size);
-					fprintf (f, "%s\n", text);
-					free (text);
-				}
-				else
-				{
-					fprintf (stderr, "Memoire insuffisante\n");
-					exit (EXIT_FAILURE);
-				}
-			}
-		}
-		else
-		{
-			fprintf (stderr, "Memoire insuffisante\n");
-			exit (EXIT_FAILURE);
-		}
-	}
-	else
-		fprintf (f, "wat\n");
-
-	fprintf (f, "regexp fin\n");
-	fflush(f);*/
-
-
-
-
-
-
-
-
-	/*int parent = fork();
-	if(!parent)
-	{
-		char** argv = malloc(sizeof(char*));
-		argv[0] = "/bin/ls";
-		int i = execv("/bin/ls", argv);
-		if(i == -1)
-			perror("execv");
-		exit(1);
-	}
-	wait(NULL);*/
-
 	fprintf(f, "%s\n", buf);
 	fprintf(f, "\n");
 
@@ -654,80 +558,69 @@ void execution(char* buf)
 
 	cpy = malloc((strlen(buf) + 1) * sizeof(char));
 
-	/*{
-		size_t j = 0;
-		for(size_t i = 0; i < strlen(buf); i++)
-		{
-			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '|| buf[i+1] == '&'|| buf[i+1] == '|'|| buf[i+1] == '\0')))
-				if(!(buf[i] == '&' && (j == 0 || (cpy[j-1] == '&' && (buf[i+1] == '&' || buf[i+1] == '\0' || (j > 1 && cpy[j-2] == '&'))))))
-					if(!(buf[i] == '|' && (j == 0 || buf[i+1] == '|' || buf[i+1] == '\0')))
-					{
-						cpy[j] = buf[i];
-						j++;
-					}
-		}
-		cpy[j] = '\0';
-	}*/
-
 	{
 		size_t j = 0;
 		for(size_t i = 0; i < strlen(buf); i++)
 		{
-			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || cpy[j-1] == '&' || cpy[j-1] == '|' || buf[i+1] == ' '
-				|| (buf[i+1] == '&' && buf[i+2] == '&') || buf[i+1] == '|'|| buf[i+1] == '\0')))
+			if(!(buf[i] == ' ' && (j == 0 || cpy[j-1] == ' ' || buf[i+1] == ' ' || buf[i+1] == '\0')))
 			{
 				cpy[j] = buf[i];
 				j++;
 			}
 		}
 		cpy[j] = '\0';
+
+		// fprintf(f, "%s\n", cpy);
+		// fprintf(f, "\n");
+
+		j = 0;
+		for(size_t i = 0; i < strlen(cpy); i++)
+		{
+			if(!(cpy[i] == ' ' && (cpy[i+1] == '|' || cpy[i+1] == '&' || cpy[i-1] == '|' || cpy[i-1] == '&')))
+			{
+				cpy[j] = cpy[i];
+				j++;
+			}
+		}
+		cpy[j] = '\0';
+
+		// fprintf(f, "%s\n", cpy);
+		// fprintf(f, "\n");
 	}
-	fprintf(f, "%s\n", cpy);
-	fprintf(f, "\n");
 
-
+	int background = 0;
+	if(cpy[strlen(cpy) - 1] == '&')
+	{
+		background = 1;
+		cpy[strlen(cpy) - 1] = '\0';
+	}
 
 
 	int err;
 	regex_t preg;
+<<<<<<< HEAD
 	const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|\\|))*([:graph:]+ )+[:graph:]+( &){0,1}";
+=======
+	char mot[200], ensemble[200], str_regex[200];
+	sprintf(mot, "[^&\\|\n\t\v ]+");
+	sprintf(ensemble, "(%s[ ]{1})*%s", mot, mot);
+	sprintf(str_regex, "^(%s([&]{2}|[\\|]{1}))*%s$", ensemble, ensemble);
+>>>>>>> cd3abde661e168bc25d52058e8a5b19bb6d2ebb8
 
-	err = regcomp (&preg, str_regex, REG_NOSUB | REG_EXTENDED);
+	err = regcomp (&preg, str_regex, REG_EXTENDED);
 	if (err == 0)
 	{
 		int match;
+		regmatch_t matchs[1];
 
-		match = regexec (&preg, cpy, 0, NULL, 0);
+		match = regexec (&preg, cpy, 1, matchs, 0);
 		regfree (&preg);
 
-		/*if (match == 0)
-		{
-			printf ("%s est une adresse internet valide\n", cpy);
-		}
-		else */if (match == REG_NOMATCH)
+		if (match == REG_NOMATCH/* || matchs[0].rm_so != 0 || matchs[0].rm_eo != strlen(cpy)*/)
 		{
 			write(STDOUT_FILENO, "\nSyntax error", strlen("\nSyntax error"));
 			return;
 		}
-		/*else
-		{
-			char *text;
-			size_t size;
-
-			size = regerror (err, &preg, NULL, 0);
-			text = malloc (sizeof (*text) * size);
-			if (text)
-			{
-				regerror (err, &preg, text, size);
-				fprintf (stderr, "%s\n", text);
-				free (text);
-			}
-			else
-			{
-				fprintf (stderr, "Memoire insuffisante\n");
-				exit (EXIT_FAILURE);
-			}
-		}*/
 	}
 
 
@@ -833,6 +726,64 @@ void execution(char* buf)
 
 
 	// TRAITEMENT
+
+	/*int parent = fork();
+	if(!parent)
+	{
+		char** argv = malloc(sizeof(char*));
+		argv[0] = "/bin/ls";
+		int i = execv("/bin/ls", argv);
+		if(i == -1)
+			perror("execv");
+		exit(1);
+	}
+	wait(NULL);*/
+
+
+	for(size_t i = 0; i < size1; i++)
+	{
+		for(size_t j = 0; j < size2[i]; j++)
+		{
+			if(WOW[i][j][0][0] == '/' || ((WOW[i][j][0][0] == '.' || WOW[i][j][0][0] == '~') && WOW[i][j][0][1] == '/'))
+			{
+				int parent = fork();
+				if(!parent)
+				{
+					int k = execv(WOW[i][j][0], WOW[i][j]);
+					if(k == -1)
+						perror("execv");
+					exit(1);
+				}
+				wait(NULL);
+			}
+			else
+			{
+				char* PATH = getenv("PATH");
+				char* dirname = strtok(PATH, ":");
+				DIR* dir;
+				struct dirent* file;
+
+				while(dir != NULL)
+				{
+					dir = opendir(dirname);
+					if(!dir)
+						continue;
+
+					while((file = readdir(dir)))
+					{
+						if(!strcmp(WOW[i][j][0], file->d_name) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
+						{
+							
+						}
+					}
+
+					dirname = strtok(NULL, ":");
+				} 
+			}
+		}
+	}
+
+
 
 
 
