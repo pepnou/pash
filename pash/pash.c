@@ -581,58 +581,81 @@ void execution(char* buf)
 
 	// TRAITEMENT
 
-	/*int parent = fork();
-	if(!parent)
-	{
-		char** argv = malloc(sizeof(char*));
-		argv[0] = "/bin/ls";
-		int i = execv("/bin/ls", argv);
-		if(i == -1)
-			perror("execv");
-		exit(1);
+
+	/*
+	int pp[2];
+	pipe(pp);
+
+	pid_t child1 = fork();
+
+	if( child1 == 0) {
+		// Replace stdout with the write end of the pipe
+		dup2(pp[1], STDOUT_FILENO);
+		// Close read end of the pipe
+		close(pp[0]);
+		close(pp[1]);
+		// Run command
+		char * argv1[] = {"printf","Salut Tout Le Monde ", NULL};
+		execvp( argv1[0], argv);
 	}
-	wait(NULL);*/
+	else {
+		pid_t child2 = fork();
+	
+		if(child2 == 0) {
+			// Replace stdin with the read end of the pipe
+			dup2(pp[0], STDIN_FILENO);
+			// Close write end of the pipe
+			close(pp[1]);
+			close(pp[0]);
+			// Run command
+			char * argv2[] = {"wc","-c", " ", NULL};
+			execvp( argv2[0], argv);
+		}
+		else {
+			// Close both end of the pipe
+			close(pp[0]);
+			close(pp[1]);
+			// wait for two child
+			wait(NULL);
+			wait(NULL);
+		}
+	}*/
 
 
 	for(size_t i = 0; i < size1; i++)
 	{
+		int pp[size2[i] - 1][2];
 		for(size_t j = 0; j < size2[i]; j++)
 		{
-			if(WOW[i][j][0][0] == '/' || ((WOW[i][j][0][0] == '.' || WOW[i][j][0][0] == '~') && WOW[i][j][0][1] == '/'))
+			//fprintf(f, "%ld\n", j);
+			pipe(pp[j]);
+
+			int parent = fork();
+			if(!parent)
 			{
-				int parent = fork();
-				if(!parent)
+				if(j != 0)
 				{
-					int k = execv(WOW[i][j][0], WOW[i][j]);
-					if(k == -1)
-						perror("execv");
-					exit(1);
+					dup2(pp[j-1][0], STDIN_FILENO);
 				}
-				wait(NULL);
-			}
-			else
-			{
-				char* PATH = getenv("PATH");
-				char* dirname = strtok(PATH, ":");
-				DIR* dir;
-				struct dirent* file;
-
-				while(dir != NULL)
+				if(j != size2[i] - 1)
 				{
-					dir = opendir(dirname);
-					if(!dir)
-						continue;
+					dup2(pp[j][1], STDOUT_FILENO);
+				}
 
-					while((file = readdir(dir)))
-					{
-						if(!strcmp(WOW[i][j][0], file->d_name) && strcmp(file->d_name, ".") && strcmp(file->d_name, ".."))
-						{
-							
-						}
-					}
+				int k = execvp(WOW[i][j][0], WOW[i][j]);
 
-					dirname = strtok(NULL, ":");
-				} 
+				if(k == -1)
+					perror("execution");
+				exit(1);
+			}
+		}
+		for(size_t j = 0; j < size2[i]; j++)
+		{
+			wait(NULL);
+			if(j > 0)
+			{
+				close(pp[j-1][0]);
+				close(pp[j-1][1]);
 			}
 		}
 	}
