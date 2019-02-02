@@ -67,6 +67,18 @@ FILE* f;
 int width, height;
 int over = 0;
 
+//same as strncpy but allow buffer overlap
+char *strncpy_buff(char *dest, const char *src, size_t n)
+{
+	char* tmp = malloc(n*sizeof(char));
+
+	strncpy(tmp, src, n);
+	strncpy(dest, tmp, n);
+	free(tmp);
+
+	return dest;
+}
+
 void intro()
 {
 	int parent = fork();
@@ -528,18 +540,22 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	}
 	else if(h->cur == 1)
 	{
-		strncpy( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
+		fprintf(f, "%s\n", &(buf[*cur]));
+		//fprintf(f, "%s\n", buf);
+		fprintf(f, "%s\n", buf);
+		strncpy_buff( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
+		fprintf(f, "%s\n", buf);
 		strncpy(&(buf[*cur]), h->liste->buf, strlen(h->liste->buf));
-
-		eraseLine(*cur, *fin, *prw);
-
-		write(STDOUT_FILENO, buf, strlen(buf));
+		fprintf(f, "%s\n\n", buf);
 
 		*cur = *cur + strlen(h->liste->buf);
 		*fin = *fin + strlen(h->liste->buf);
 
-		moveC( *fin, *cur, *prw);
+		buf[*fin] = '\0';
 
+		eraseLine(*cur, *fin, *prw);
+		write(STDOUT_FILENO, buf, strlen(buf));
+		moveC( *fin, *cur, *prw);
 		supprList(h->liste);
 		free(h);
 		h = NULL;
@@ -901,7 +917,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 				for(unsigned i = 0; i <= selected; i++)
 					tmp = tmp->suiv;
 
-				strncpy( &(buf[*cur + strlen(tmp->buf)]), &(buf[*cur]), *fin - *cur);
+				strncpy_buff( &(buf[*cur + strlen(tmp->buf)]), &(buf[*cur]), *fin - *cur);
 				strncpy( &(buf[*cur - strlen(nom)]), nom, strlen(nom));
 				strncpy( &(buf[*cur]), tmp->buf, strlen(tmp->buf));
 
@@ -912,7 +928,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 				moveC(*cur, *fin, *prw);
 
-				buf[*fin + 1] = '\0';
+				//buf[*fin + 1] = '\0';
+				buf[*fin] = '\0';
 
 				write(STDOUT_FILENO, buf, strlen(buf));
 
@@ -936,16 +953,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected--;
 
-							/*w = width;
-
-							nbpL = w / (search->max_length + 2);
-							nbL = ceil((double)search->cur/nbpL);
-
-							Sfin = nbL * width;*/
-
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -957,16 +966,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected++;
 
-							/*w = width;
-
-							nbpL = w / (search->max_length + 2);
-							nbL = ceil((double)search->cur/nbpL);
-
-							Sfin = nbL * width;*/
-
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -978,18 +979,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected += nbL;
 
-							/*w = width;
-
-							nbpL = w / (search->max_length + 2);
-							nbL = ceil((double)search->cur/nbpL);
-
-							Sfin = nbL * width;*/
-
-							//fprintf(f, "%d, %d, %d, %ld\n", w, nbpL, nbL, Sfin);
-
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -1001,16 +992,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected -= nbL;
 
-							/*w = width;
-
-							nbpL = w / (search->max_length + 2);
-							nbL = ceil((double)search->cur/nbpL);
-
-							Sfin = nbL * width;*/
-
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -1032,6 +1015,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 		{
 			write(STDOUT_FILENO, &c, 1);
 			buf[*cur] = c;
+			buf[*fin + 1] = '\0';
 
 			if((*cur + *prw + 1) % width == 0)
 			{
@@ -1043,8 +1027,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 		}
 		else
 		{
-			strncpy( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
+			strncpy_buff( &(buf[*cur + 1]), &(buf[*cur]), *fin - *cur + 1);
 			buf[*cur] = c;
+			buf[*fin + 1] = '\0';
 						
 			write(STDOUT_FILENO, &(buf[*cur]), *fin - *cur + 1);
 			
@@ -1122,7 +1107,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 				if(*cur == 0)
 					break;
 
-				strncpy( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
+				strncpy_buff( &(buf[*cur - 1]), &(buf[*cur]), *fin - *cur + 1);
 
 				eraseLine( *cur, *fin, *prw);
 
@@ -1245,7 +1230,7 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 							if(*cur == *fin)
 								break;
 
-							strncpy( &(buf[*cur]), &(buf[*cur + 1]), *fin - *cur);
+							strncpy_buff( &(buf[*cur]), &(buf[*cur + 1]), *fin - *cur);
 
 							eraseLine( *cur, *fin, *prw);
 

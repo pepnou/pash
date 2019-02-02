@@ -1,5 +1,6 @@
 #include "liste.h"
 
+char *strncpy_buff(char *dest, const char *src, size_t n);
 
 void resize();
 void end();
