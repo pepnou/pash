@@ -255,10 +255,6 @@ size_t prompt()
 
 	write(STDOUT_FILENO, prompt, strlen(prompt));
 
-	free(prompt);
-	free(trunc_pwd);
-	free(pwd);
-
 	size +=   5 // heure
 			+ 1 // tiret
 			+ strlen(user)
@@ -271,6 +267,11 @@ size_t prompt()
 	size +=   1 // espace
 			+ strlen(smiley)
 			+ 3; // espace | espace
+
+	free(host);
+	free(prompt);
+	free(trunc_pwd);
+	free(pwd);
 
 	return size;
 }
@@ -412,6 +413,7 @@ void display(historique h, int selected)
 
 		for(unsigned i = 0; i < nbL; i++)
 		{
+			fprintf(f, "%s\n", ordered[i]);
 			if(selected >= 0 && i == selected % nbL)
 			{
 				unsigned pos = (width/nbpL) * (selected/nbL);
@@ -420,7 +422,7 @@ void display(historique h, int selected)
 				write(STDOUT_FILENO, BACKG, strlen(BACKG));
 				write(STDOUT_FILENO, &(ordered[i][pos]), h.max_length + 2);
 				write(STDOUT_FILENO, RESET, strlen(RESET));
-				write(STDOUT_FILENO, &(ordered[i][pos + h.max_length + 2]), width - pos - h.max_length + 2);
+				write(STDOUT_FILENO, &(ordered[i][pos + h.max_length + 2]), width - pos - (h.max_length + 2));
 				write(STDOUT_FILENO, "\n", 1);
 			}
 			else
@@ -429,6 +431,12 @@ void display(historique h, int selected)
 				write(STDOUT_FILENO, "\n", 1);
 			}
 		}
+
+		for(unsigned i = 0; i < nbL; i++)
+		{
+			free(ordered[i]);
+		}
+		free(ordered);
 	}
 }
 
@@ -586,7 +594,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 					}
 				}
 
-
+				closedir(dir);
 				Pdeb = Pfin + 1;
 				free(chemin);
 			}
@@ -1160,10 +1168,18 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 					read(STDIN_FILENO, &c, 1);
 					if(c == 9)
 					{
-						selection(c, buf, cur, fin, size, prw, h, search);;
+						selection(c, buf, cur, fin, size, prw, h, search);
+
+						supprList(search->liste);
+						free(search);
+						search = NULL;
 					}
 					else
 					{
+						supprList(search->liste);
+						free(search);
+						search = NULL;
+
 						handle(c, buf, cur, fin, size, prw, h, search);
 					}
 				}
