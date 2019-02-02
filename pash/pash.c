@@ -257,6 +257,7 @@ size_t prompt()
 
 	free(prompt);
 	free(trunc_pwd);
+	free(pwd);
 
 	size +=   5 // heure
 			+ 1 // tiret
@@ -956,11 +957,11 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 	unsigned finished = 0;
 	unsigned selected = 0;
 
+
 	moveC(*cur, *fin, *prw);
-	eraseLine( *fin + *prw + 1, *fin, 0);
+	eraseLine( *fin + *prw + 1, *fin + *prw + 1, 0);
 	eraseLine( Sfin, Sfin, 0);
 	display( *search, selected);
-
 	*prw = prompt();
 	write(STDOUT_FILENO, buf, strlen(buf));
 	moveC(*fin, *cur, *prw);
@@ -985,8 +986,8 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 			case 9:
 			{
 				finished = 1;
-				*prw = prompt();
-				write(STDOUT_FILENO, nom, strlen(nom));
+				//*prw = prompt();
+				//write(STDOUT_FILENO, nom, strlen(nom));
 				break;
 			}
 			//new line : ctrl + J : selectionne
