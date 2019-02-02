@@ -13,6 +13,7 @@
 #include <math.h>
 #include <regex.h>
 #include <time.h>
+#include <limits.h>
 
 
 #include "pash.h"
@@ -111,7 +112,7 @@ void end()
 }
 
 //display prompt
-size_t prompt()
+size_t prompt_old()
 {
 	char pr[] = "CC$ ";
 	write(STDOUT_FILENO, pr, strlen(pr));
@@ -119,108 +120,158 @@ size_t prompt()
 	return strlen(pr); // -1 pour enlever la longueur de \n
 }
 
-size_t prompt_new()
+// size_t prompt()
+// {
+// 	// http://ezprompt.net/
+// 		/*wordexp_t ptr;
+// 	wordexp("PATH", &ptr, WRDE_UNDEF);
+// 	printf("%s\n", ptr);*/
+// 	size_t size = 0;
+// 	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME");
+// 	struct winsize w;
+// 	ioctl(0, TIOCGWINSZ, &w);
+// 	/*char *base_color, *time_color, *user_color, *pwd_color, *smiley_color, *smiley_face;
+// 	size_t size = 0;
+// 	ssize_t lu;
+// 	FILE *file = fopen("./built-in/build/prompt_param.txt", "r");
+// 	for (int i = 0; i < 6; ++i)
+// 	{
+// 		switch (i)
+// 		{
+// 			case 0 :
+// 				lu = getline(&base_color, &size, file);
+// 				base_color[-1] = '\0';
+// 				break;
+
+// 			case 1 :
+// 				lu = getline(&time_color, &size, file);
+// 				break;
+
+// 			case 2 :
+// 				lu = getline(&user_color, &size, file);
+// 				break;
+
+// 			case 3 :
+// 				lu = getline(&pwd_color, &size, file);
+// 				break;
+
+// 			case 4 :
+// 				lu = getline(&smiley_color, &size, file);
+// 				break;
+
+// 			case 5 :
+// 				lu = getline(&smiley_face, &size, file);
+// 				break;
+// 		}
+// 	}
+// 	printf("%s bonsoir", base_color);*/
+
+// 	time_t temps = time(NULL);
+// 	struct tm now = *localtime(&temps);
+// 	char shortpwd[strlen(pwd) - strlen(home)];
+
+// 	//debut prompt
+// 	printf("\n" GROS);
+// 	//time
+// 	printf(BLANC"["ROUGE);
+// 	if(now.tm_hour<10)
+// 		printf("0");
+// 	printf("%d"BLANC BLINK":"UNBLINK ROUGE, now.tm_hour);
+// 	if(now.tm_min<10)
+// 		printf("0");
+// 	printf("%d"BLANC "]", now.tm_min);
+// 	size +=8;
+
+// 	//username : - user =>
+// 	printf(PETIT"-"RESET GROS B_VERT"%s" BLANC ":", user);
+// 	size += 2+strlen(user);
+
+// 	//chemin absolut avec raccourci ~
+// 	printf(GROS B_CYAN);
+// 	if(strlen(pwd)>strlen(home))
+// 	{
+// 		strncpy(shortpwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
+// 		printf("~%s\n", shortpwd);	
+// 		size += 2+strlen(pwd);
+// 	}
+// 	else
+// 	{
+// 		if (strlen(pwd) == strlen(home))
+// 		{
+// 			printf("~\n");
+// 			size += 2;
+// 		}
+// 		else
+// 		{
+// 			printf("%s\n", pwd);
+// 			size += 1 + strlen(pwd);
+// 		}
+// 	}
+// 	size -= 2;
+// 	if(size <= w.ws_col)
+// 		size += w.ws_col - size;
+// 	else
+// 		size += (w.ws_col - (size%w.ws_col));
+
+// 	printf(RESET);
+
+// 	//smiley
+// 	printf( GROS B_JAUNE" %s " BLANC BLINK"| "RESET, smiley);
+// 	size += strlen(smiley) + 4;
+// 	//printf(" %d", size);
+// 	fflush(stdout);
+
+// 	return size + 3;
+// }
+
+size_t prompt()
 {
-	// http://ezprompt.net/
-		/*wordexp_t ptr;
-	wordexp("PATH", &ptr, WRDE_UNDEF);
-	printf("%s\n", ptr);*/
 	size_t size = 0;
-	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME");
-	struct winsize w;
-	ioctl(0, TIOCGWINSZ, &w);
-	/*char *base_color, *time_color, *user_color, *pwd_color, *smiley_color, *smiley_face;
-	size_t size = 0;
-	ssize_t lu;
-	FILE *file = fopen("./built-in/build/prompt_param.txt", "r");
-	for (int i = 0; i < 6; ++i)
-	{
-		switch (i)
-		{
-			case 0 :
-				lu = getline(&base_color, &size, file);
-				base_color[-1] = '\0';
-				break;
-
-			case 1 :
-				lu = getline(&time_color, &size, file);
-				break;
-
-			case 2 :
-				lu = getline(&user_color, &size, file);
-				break;
-
-			case 3 :
-				lu = getline(&pwd_color, &size, file);
-				break;
-
-			case 4 :
-				lu = getline(&smiley_color, &size, file);
-				break;
-
-			case 5 :
-				lu = getline(&smiley_face, &size, file);
-				break;
-		}
-	}
-	printf("%s bonsoir", base_color);*/
+	char *pwd = malloc(200*sizeof(char)), *user = getenv("USER"), *home = getenv("HOME"), *host = malloc(100*sizeof(char));
+	getcwd(pwd, 200);
+	gethostname(host, 100);
+	char* prompt = malloc(500*sizeof(char));
 
 	time_t temps = time(NULL);
 	struct tm now = *localtime(&temps);
-	char shortpwd[strlen(pwd) - strlen(home)];
+	char* trunc_pwd = malloc(strlen(pwd)*sizeof(char));
 
-	//debut prompt
-	printf("\n" GROS);
-	//time
-	printf(BLANC"["ROUGE);
-	if(now.tm_hour<10)
-		printf("0");
-	printf("%d"BLANC BLINK":"UNBLINK ROUGE, now.tm_hour);
-	if(now.tm_min<10)
-		printf("0");
-	printf("%d"BLANC "]", now.tm_min);
-	size +=8;
-
-	//username : - user =>
-	printf(PETIT"-"RESET GROS B_VERT"%s" BLANC ":", user);
-	size += 2+strlen(user);
-
-	//chemin absolut avec raccourci ~
-	printf(GROS B_CYAN);
-	if(strlen(pwd)>strlen(home))
+	if(!(strncmp(home, pwd, strlen(home))))
 	{
-		strncpy(shortpwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
-		printf("~%s\n", shortpwd);	
-		size += 2+strlen(pwd);
+		trunc_pwd[0] = '~';
+		strcpy(&(trunc_pwd[1]), &(pwd[strlen(home)]));
+		trunc_pwd[strlen(pwd) - strlen(home) + 1] = '/';
+		trunc_pwd[strlen(pwd) - strlen(home) + 2] = '\0';
 	}
 	else
 	{
-		if (strlen(pwd) == strlen(home))
-		{
-			printf("~\n");
-			size += 2;
-		}
-		else
-		{
-			printf("%s\n", pwd);
-			size += 1 + strlen(pwd);
-		}
+		strcpy(trunc_pwd, pwd);
 	}
-	size -= 2;
-	if(size <= w.ws_col)
-		size += w.ws_col - size;
-	else
-		size += (w.ws_col - (size%w.ws_col));
 
-	printf(RESET);
+	sprintf(prompt, GROS BLANC "[" ROUGE "%02d" BLANC BLINK ":" UNBLINK ROUGE "%02d" BLANC "]" PETIT "-" RESET GROS B_VERT "%s@%s" BLANC ":" B_CYAN "%s\n"
+			B_JAUNE " %s " BLANC BLINK "| "RESET, 
+			now.tm_hour, now.tm_min, user, host, trunc_pwd,
+			smiley);
 
-	//smiley
-	printf( GROS B_JAUNE" %s " BLANC BLINK"| "RESET, smiley);
-	size += strlen(smiley) + 4;
-	//printf(" %d", size);
-	fflush(stdout);
+	write(STDOUT_FILENO, prompt, strlen(prompt));
 
-	return size + 3;
+	free(prompt);
+	free(trunc_pwd);
+
+	size +=   5 // heure
+			+ 1 // tiret
+			+ strlen(user)
+			+ 1 // @
+			+ strlen(host)
+			+ 1 // :
+			+ strlen(trunc_pwd);
+	size = (size/width)*width + width; // \n
+
+	size +=   1 // espace
+			+ strlen(smiley)
+			+ 3; // espace | espace
+
+	return size;
 }
 
 //move the cursor
@@ -262,6 +313,7 @@ void moveC(size_t source, size_t dest, size_t prw)
 //erase the entire line
 void eraseLine(size_t cur, size_t fin, size_t prw)
 {
+	prw = prw % width;
 
 	moveC(cur, fin, prw);
 
@@ -576,7 +628,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 		ajoutDeb(&(h->liste), nom, strlen(nom));
 		display(*h, -1);
 
-		prompt();
+		*prw = prompt();
 		write(STDOUT_FILENO, buf, strlen(buf));
 		moveC( *fin, *cur, *prw);
 	}
@@ -802,37 +854,57 @@ void execution(char* buf)
 		}
 	}*/
 
+	int cd;
 
 	for(size_t i = 0; i < size1; i++)
 	{
 		int pp[size2[i] - 1][2];
+		cd = 0;
 		for(size_t j = 0; j < size2[i]; j++)
 		{
 			//fprintf(f, "%ld\n", j);
 			pipe(pp[j]);
 
-			int parent = fork();
-			if(!parent)
+			if(!(strcmp("cd", WOW[i][j][0])))
 			{
-				if(j != 0)
+				cd++;
+				DIR* dir = opendir(WOW[i][j][1]);
+				if(dir == NULL)
+					perror(WOW[i][j][1]);
+				else
 				{
-					dup2(pp[j-1][0], STDIN_FILENO);
+					closedir(dir);
+					chdir(WOW[i][j][1]);
 				}
-				if(j != size2[i] - 1)
-				{
-					dup2(pp[j][1], STDOUT_FILENO);
-				}
-
-				int k = execvp(WOW[i][j][0], WOW[i][j]);
-
-				if(k == -1)
-					perror("execution");
-				exit(1);
 			}
+			else
+			{
+				int parent = fork();
+				if(!parent)
+				{
+					if(j != 0)
+					{
+						dup2(pp[j-1][0], STDIN_FILENO);
+					}
+					if(j != size2[i] - 1)
+					{
+						dup2(pp[j][1], STDOUT_FILENO);
+					}
+
+					int k = execvp(WOW[i][j][0], WOW[i][j]);
+
+					if(k == -1)
+						perror(WOW[i][j][0]);
+					exit(1);
+				}
+			}
+		}
+		for(size_t j = 0; j < size2[i] - cd; j++)
+		{
+			wait(NULL);
 		}
 		for(size_t j = 0; j < size2[i]; j++)
 		{
-			wait(NULL);
 			if(j > 0)
 			{
 				close(pp[j-1][0]);
@@ -889,7 +961,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 	eraseLine( Sfin, Sfin, 0);
 	display( *search, selected);
 
-	prompt();
+	*prw = prompt();
 	write(STDOUT_FILENO, buf, strlen(buf));
 	moveC(*fin, *cur, *prw);
 
@@ -913,7 +985,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 			case 9:
 			{
 				finished = 1;
-				prompt();
+				*prw = prompt();
 				write(STDOUT_FILENO, nom, strlen(nom));
 				break;
 			}
@@ -966,7 +1038,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
 
-							prompt();
+							*prw = prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
 							moveC(*fin, *cur, *prw);
 							break;
@@ -982,7 +1054,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
 
-							prompt();
+							*prw = prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
 							moveC(*fin, *cur, *prw);
 							break;
@@ -998,7 +1070,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
 
-							prompt();
+							*prw = prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
 							moveC(*fin, *cur, *prw);
 							break;
@@ -1014,7 +1086,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
 
-							prompt();
+							*prw = prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
 							moveC(*fin, *cur, *prw);
 							break;
