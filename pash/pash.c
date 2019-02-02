@@ -37,12 +37,26 @@
 #define B_CYAN "\e[96m"
 #define B_BLANC "\e[97m"
 
+//
 #define RESET "\e[0m"
 #define GROS "\e[1m"
 #define PETIT "\e[2m"
 #define ITALIC "\e[3m"
 #define BLINK "\e[5m"
 #define UNBLINK "\e[25m"
+
+//controle curseur
+#define SAVEC "\033[s"
+#define RESTC "\033[u"
+#define UPC "\033[A"
+#define DOWNC "\033[B"
+#define FORWC "\033[C"
+#define BACKC "\033[D"
+#define DELLI "\033[K"
+
+//fond blanc police noire
+#define BACKG "\033[30;47m"
+
 
 char *smiley = "<(^_^)>";
 
@@ -83,16 +97,15 @@ void end()
 	//regarder ptrace
 }
 
-size_t prompt_old()
+size_t prompt()
 {
-	// http://ezprompt.net/
-	char pr[] = "\nCC$ ";
+	char pr[] = "CC$ ";
 	write(STDOUT_FILENO, pr, strlen(pr));
 
-	return strlen(pr) - 1; // -1 pour enlever la longueur de \n
+	return strlen(pr); // -1 pour enlever la longueur de \n
 }
 
-size_t prompt()
+size_t prompt_new()
 {
 	// http://ezprompt.net/
 		/*wordexp_t ptr;
@@ -290,10 +303,10 @@ void display(historique h, int selected)
 	{
 		while(tmp != NULL)
 		{
-			write(STDOUT_FILENO, "\n", 1);
 			if(strlen(nom) != 0)
 				write(STDOUT_FILENO, nom, strlen(nom));
 			write(STDOUT_FILENO, tmp->buf, strlen(tmp->buf));
+			write(STDOUT_FILENO, "\n", 1);
 			
 			tmp = tmp->suiv;
 		}
@@ -332,17 +345,17 @@ void display(historique h, int selected)
 			{
 				unsigned pos = (width/nbpL) * (selected/nbL);
 
-				write(STDOUT_FILENO, "\n", 1);
 				write(STDOUT_FILENO, ordered[i], pos);
 				write(STDOUT_FILENO, BACKG, strlen(BACKG));
 				write(STDOUT_FILENO, &(ordered[i][pos]), h.max_length + 2);
 				write(STDOUT_FILENO, RESET, strlen(RESET));
 				write(STDOUT_FILENO, &(ordered[i][pos + h.max_length + 2]), width - pos - h.max_length + 2);
+				write(STDOUT_FILENO, "\n", 1);
 			}
 			else
 			{
-				write(STDOUT_FILENO, "\n", 1);
 				write(STDOUT_FILENO, ordered[i], width);
+				write(STDOUT_FILENO, "\n", 1);
 			}
 		}
 	}
@@ -534,6 +547,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	else
 	{
 		moveC( *cur, *fin, *prw);
+		write(STDOUT_FILENO, "\n", 1);
 
 		bubbleSort(h->liste);
 		ajoutDeb(&(h->liste), nom, strlen(nom));
@@ -598,14 +612,11 @@ void execution(char* buf)
 
 	int err;
 	regex_t preg;
-<<<<<<< HEAD
-	const char *str_regex = "(([:graph:]+ )+[:graph:]+((&&)|\\|))*([:graph:]+ )+[:graph:]+( &){0,1}";
-=======
+
 	char mot[200], ensemble[200], str_regex[200];
 	sprintf(mot, "[^&\\|\n\t\v ]+");
 	sprintf(ensemble, "(%s[ ]{1})*%s", mot, mot);
 	sprintf(str_regex, "^(%s([&]{2}|[\\|]{1}))*%s$", ensemble, ensemble);
->>>>>>> cd3abde661e168bc25d52058e8a5b19bb6d2ebb8
 
 	err = regcomp (&preg, str_regex, REG_EXTENDED);
 	if (err == 0)
@@ -850,7 +861,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 	eraseLine( *cur + *prw + 1, *fin, 0);
 	eraseLine( Sfin, Sfin, 0);
-	moveC( width, width - 1, 0);
+	//moveC( width, width - 1, 0);
 	display( *search, selected);
 	prompt();
 	write(STDOUT_FILENO, buf, strlen(buf));
@@ -882,8 +893,9 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 			//new line : ctrl + J : selectionne
 			case 10:
 			{
-				moveC(*cur + *prw + width, width - 1, 0);
-				prompt();
+				//moveC(*cur + *prw + width, width - 1, 0);
+				//prompt();
+				moveC(*cur, 0, *prw);
 
 				elem* tmp = search->liste;
 				for(unsigned i = 0; i <= selected; i++)
@@ -933,7 +945,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							moveC( width, width - 1, 0);
+							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -954,7 +966,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							moveC( width, width - 1, 0);
+							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -977,7 +989,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							moveC( width, width - 1, 0);
+							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -998,7 +1010,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 
 							eraseLine( *cur + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
-							moveC( width, width - 1, 0);
+							//moveC( width, width - 1, 0);
 							display( *search, selected);
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
@@ -1081,6 +1093,8 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 			//new line : ctrl + J
 			case 10:
 			{
+				write(STDOUT_FILENO, "\n", 1);
+
 				buf[*fin] = '\0';
 				h->cur = 0;
 				if(*fin != 0)
@@ -1283,7 +1297,7 @@ int main( int argc, char** argv, char** envp)
 {
 	f = fopen("./log.txt", "a+");
 
-	intro();
+	//intro();
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);

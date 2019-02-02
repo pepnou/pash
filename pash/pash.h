@@ -1,16 +1,5 @@
 #include "liste.h"
 
-#define SAVEC "\033[s"
-#define RESTC "\033[u"
-#define UPC "\033[A"
-#define DOWNC "\033[B"
-#define FORWC "\033[C"
-#define BACKC "\033[D"
-#define DELLI "\033[K"
-
-#define BACKG "\033[30;47m"
-#define RESET "\033[0m"
-
 
 void resize();
 void end();
