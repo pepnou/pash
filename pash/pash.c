@@ -46,16 +46,16 @@
 #define UNBLINK "\e[25m"
 
 //controle curseur
-#define SAVEC "\033[s"
-#define RESTC "\033[u"
-#define UPC "\033[A"
-#define DOWNC "\033[B"
-#define FORWC "\033[C"
-#define BACKC "\033[D"
-#define DELLI "\033[K"
+#define SAVEC "\e[s"
+#define RESTC "\e[u"
+#define UPC "\e[A"
+#define DOWNC "\e[B"
+#define FORWC "\e[C"
+#define BACKC "\e[D"
+#define DELLI "\e[K"
 
 //fond blanc police noire
-#define BACKG "\033[30;47m"
+#define BACKG "\e[30;47m"
 
 
 char *smiley = "<(^_^)>";
@@ -95,6 +95,7 @@ void intro()
 	wait(NULL);
 }
 
+//window resize signal handler
 void resize()
 {
 	struct winsize w;
@@ -103,12 +104,13 @@ void resize()
 	height = w.ws_row;
 }
 
-//mettre fin au processus enfants
+//SIGINT signal handler
 void end()
 {
-	//regarder ptrace
+	
 }
 
+//display prompt
 size_t prompt()
 {
 	char pr[] = "CC$ ";
@@ -221,6 +223,7 @@ size_t prompt_new()
 	return size + 3;
 }
 
+//move the cursor
 void moveC(size_t source, size_t dest, size_t prw)
 {
 	int lS = (source + prw) / width;
@@ -256,6 +259,7 @@ void moveC(size_t source, size_t dest, size_t prw)
 	}
 }
 
+//erase the entire line
 void eraseLine(size_t cur, size_t fin, size_t prw)
 {
 
@@ -279,6 +283,7 @@ void eraseLine(size_t cur, size_t fin, size_t prw)
 	write(STDOUT_FILENO, DELLI, strlen(DELLI));
 }
 
+//use a bubblesort to sort a queue of string
 void  bubbleSort(elem* liste)
 {
 	elem* tmp = liste;
@@ -305,6 +310,7 @@ void  bubbleSort(elem* liste)
 	} while(!done);
 }
 
+//display the result of the auto-completion
 void display(historique h, int selected)
 {
 	elem* tmp = h.liste->suiv;
@@ -373,6 +379,7 @@ void display(historique h, int selected)
 	}
 }
 
+//the auto-completion
 historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 {
 	if(*cur == 0)
@@ -578,6 +585,7 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	return h;
 }
 
+//execute a command line
 void execution(char* buf)
 {
 	fprintf(f, "%s\n", buf);
@@ -862,6 +870,7 @@ void execution(char* buf)
 	free(size2);
 }
 
+//handle navigation into the result of the auto-completion
 void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
 	unsigned w = width;
@@ -875,12 +884,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 	unsigned finished = 0;
 	unsigned selected = 0;
 
-	eraseLine( *cur + *prw + 1, *fin, 0);
+	moveC(*cur, *fin, *prw);
+	eraseLine( *fin + *prw + 1, *fin, 0);
 	eraseLine( Sfin, Sfin, 0);
-	//moveC( width, width - 1, 0);
 	display( *search, selected);
+
 	prompt();
 	write(STDOUT_FILENO, buf, strlen(buf));
+	moveC(*fin, *cur, *prw);
 
 
 	//fprintf(f, "%d, %d, %d, %d\n", w, nbpL, nbL, Sfin);
@@ -924,14 +935,11 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 				*cur += strlen(tmp->buf);
 				*fin += strlen(tmp->buf);
 
-				//fprintf(f, "%ld, %ld\n", *cur, *fin);
-
-				moveC(*cur, *fin, *prw);
-
-				//buf[*fin + 1] = '\0';
 				buf[*fin] = '\0';
 
 				write(STDOUT_FILENO, buf, strlen(buf));
+
+				moveC(*fin, *cur, *prw);
 
 				finished = 1;
 				break;
@@ -953,11 +961,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected--;
 
-							eraseLine( *cur + *prw + 1, *fin, 0);
+							moveC(*cur, *fin, *prw);
+							eraseLine( *fin + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
+
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
+							moveC(*fin, *cur, *prw);
 							break;
 						}
 						case 'B': //bas
@@ -966,11 +977,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected++;
 
-							eraseLine( *cur + *prw + 1, *fin, 0);
+							moveC(*cur, *fin, *prw);
+							eraseLine( *fin + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
+
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
+							moveC(*fin, *cur, *prw);
 							break;
 						}
 						case 'C': //droite
@@ -979,11 +993,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected += nbL;
 
-							eraseLine( *cur + *prw + 1, *fin, 0);
+							moveC(*cur, *fin, *prw);
+							eraseLine( *fin + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
+
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
+							moveC(*fin, *cur, *prw);
 							break;
 						}
 						case 'D': //gauche
@@ -992,11 +1009,14 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 								break;
 							selected -= nbL;
 
-							eraseLine( *cur + *prw + 1, *fin, 0);
+							moveC(*cur, *fin, *prw);
+							eraseLine( *fin + *prw + 1, *fin, 0);
 							eraseLine( Sfin, Sfin, 0);
 							display( *search, selected);
+
 							prompt();
 							write(STDOUT_FILENO, buf, strlen(buf));
+							moveC(*fin, *cur, *prw);
 							break;
 						}
 					}
@@ -1007,6 +1027,7 @@ void selection( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_
 	}
 }
 
+//handle stdin input
 void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* prw, historique* h, historique* search)
 {
 	if(c >= 32 && c <= 126)
@@ -1271,12 +1292,6 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 		}
 	}
 }
-
-
-
-
-
-
 
 int main( int argc, char** argv, char** envp)
 {
