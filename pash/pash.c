@@ -67,6 +67,7 @@ FILE* f;
 
 int width, height;
 int over = 0;
+elem2* processes = NULL;
 
 //same as strncpy but allow buffer overlap
 char *strncpy_buff(char *dest, const char *src, size_t n)
@@ -108,7 +109,14 @@ void resize()
 //SIGINT signal handler
 void end()
 {
-	
+	elem2* tmp = processes;
+	while(tmp != NULL)
+	{
+		kill(tmp->val, SIGINT);
+		tmp = tmp->suiv;
+	}
+	supprList2(processes);
+	processes = NULL;
 }
 
 //display prompt
@@ -908,6 +916,8 @@ void execution(char* buf)
 						perror(WOW[i][j][0]);
 					exit(1);
 				}
+
+				ajoutDeb2(&processes, parent);
 			}
 
 			if(j > 0)
@@ -916,14 +926,9 @@ void execution(char* buf)
 				close(pp[j-1][1]);
 			}
 		}
-		for(size_t j = 0; j < size2[i] - cd; j++)
-		{
-			wait(NULL);
-		}
-		/*for(size_t j = 0; j < size2[i]; j++)
-		{
-			
-		}*/
+		if(!background)
+			for(size_t j = 0; j < size2[i] - cd; j++)
+				wait(NULL);
 	}
 
 

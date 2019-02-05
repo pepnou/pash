@@ -9,7 +9,7 @@ void ajoutDeb(elem** liste, char* buf, size_t size)
 	elem * new_elem = malloc(sizeof(elem));
 	if(new_elem == NULL)
 	{
-		perror("pb malloc");
+		perror("ajoutDeb");
 		exit(1);
 	}
 
@@ -33,6 +33,34 @@ void supprList(elem* liste)
 		free(liste->buf);
 		free(liste);
 
+		liste = tmp;
+	}
+}
+
+
+void ajoutDeb2(elem2** liste, int val)
+{
+	elem2* new_elem = malloc(sizeof(elem));
+	if(new_elem == NULL)
+	{
+		perror("ajoutDeb");
+		exit(1);
+	}
+
+	new_elem->val = val;
+	new_elem->suiv = *liste;
+
+	*liste = new_elem;
+}
+
+void supprList2(elem2* liste)
+{
+	elem2* tmp;
+
+	while(liste != NULL)
+	{
+		tmp = liste->suiv;
+		free(liste);
 		liste = tmp;
 	}
 }
