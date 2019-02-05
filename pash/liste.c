@@ -38,7 +38,7 @@ void supprList(elem* liste)
 }
 
 
-void ajoutDeb2(elem2** liste, int val)
+void ajoutDeb2(elem2** liste, int val, char* buf)
 {
 	elem2* new_elem = malloc(sizeof(elem));
 	if(new_elem == NULL)
@@ -48,6 +48,8 @@ void ajoutDeb2(elem2** liste, int val)
 	}
 
 	new_elem->val = val;
+	new_elem->buf = malloc(strlen(buf) + 1);
+	strcpy(new_elem->buf, buf);
 	new_elem->suiv = *liste;
 
 	*liste = new_elem;
@@ -60,6 +62,7 @@ void supprList2(elem2* liste)
 	while(liste != NULL)
 	{
 		tmp = liste->suiv;
+		free(liste->buf);
 		free(liste);
 		liste = tmp;
 	}

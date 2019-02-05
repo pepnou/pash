@@ -871,30 +871,17 @@ void execution(char* buf)
 		}
 	}*/
 
-	int cd;
+	int nb_builtin;
 
 	for(size_t i = 0; i < size1; i++)
 	{
 		int pp[size2[i] - 1][2];
-		cd = 0;
+		nb_builtin = 0;
 		for(size_t j = 0; j < size2[i]; j++)
 		{
-			//fprintf(f, "%ld\n", j);
 			pipe(pp[j]);
 
-			if(!(strcmp("cd", WOW[i][j][0])))
-			{
-				cd++;
-				DIR* dir = opendir(WOW[i][j][1]);
-				if(dir == NULL)
-					perror(WOW[i][j][1]);
-				else
-				{
-					closedir(dir);
-					chdir(WOW[i][j][1]);
-				}
-			}
-			else
+			if(!specialExec(size3[i][j], WOW[i][j]))
 			{
 				int parent = fork();
 				if(!parent)
@@ -917,8 +904,10 @@ void execution(char* buf)
 					exit(1);
 				}
 
-				ajoutDeb2(&processes, parent);
+				ajoutDeb2(&processes, parent, WOW[i][j][0]);
 			}
+			else
+				nb_builtin++;
 
 			if(j > 0)
 			{
@@ -927,8 +916,10 @@ void execution(char* buf)
 			}
 		}
 		if(!background)
-			for(size_t j = 0; j < size2[i] - cd; j++)
+		{
+			for(size_t j = 0; j < size2[i] - nb_builtin; j++)
 				wait(NULL);
+		}
 	}
 
 
@@ -958,6 +949,37 @@ void execution(char* buf)
 	free(size3);
 
 	free(size2);
+}
+
+int specialExec(int argc, char** argv)
+{
+	if(!strcmp(argv[0], "cd") && argc == 2)
+	{
+		DIR* dir = opendir(argv[1]);
+		if(dir == NULL)
+			perror(argv[1]);
+		else
+		{
+			closedir(dir);
+			chdir(argv[1]);
+		}
+
+		return 1;
+	}
+	else if(!strcmp(argv[0], "jobs"))
+	{
+		elem2* tmp = processes;
+		char job[200];
+		while(tmp != NULL)
+		{
+			sprintf(job, "%10d: %s\n", tmp->val, tmp->buf);
+			write(STDOUT_FILENO, job, strlen(job));
+			tmp = tmp->suiv;
+		}
+
+		return 1;
+	}
+	return 0;
 }
 
 //handle navigation into the result of the auto-completion

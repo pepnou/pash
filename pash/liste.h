@@ -15,7 +15,7 @@ typedef struct elem elem;
 struct elem2
 {
 	int val;
-	size_t size;
+	char* buf;
 
 	struct elem2* suiv;
 };
@@ -30,7 +30,7 @@ typedef struct
 
 void ajoutDeb(elem** liste, char* buf, size_t size);
 void supprList(elem* liste);
-void ajoutDeb2(elem2** liste, int val);
+void ajoutDeb2(elem2** liste, int val, char* buf);
 void supprList2(elem2* liste);
 
 #endif
