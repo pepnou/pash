@@ -88,7 +88,7 @@ void intro()
 	{
 		char ** argv = malloc(sizeof(char*));
 		argv[0] = "/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro";
-		int i = execv("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro", argv);
+		int i = execvp("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro", argv);
 		if( i == -1)
 			perror("execv");
 		exit(1);
@@ -769,7 +769,7 @@ void execution(char* buf)
 		tmp2[i] = malloc((size2[i] + 1)*sizeof(char*));
 		WOW[i] = malloc((size2[i] + 1)*sizeof(char**));
 
-		size3[i] = malloc((size1 + 1)*sizeof(size_t*));
+		size3[i] = malloc((size2[i] + 1)*sizeof(size_t*));
 
 		tmp = 0;
 		do {
@@ -893,10 +893,12 @@ void execution(char* buf)
 				{
 					if(j != 0)
 					{
+						close(pp[j-1][1]);
 						dup2(pp[j-1][0], STDIN_FILENO);
 					}
 					if(j != size2[i] - 1)
 					{
+						close(pp[j][0]);
 						dup2(pp[j][1], STDOUT_FILENO);
 					}
 
@@ -907,19 +909,21 @@ void execution(char* buf)
 					exit(1);
 				}
 			}
-		}
-		for(size_t j = 0; j < size2[i] - cd; j++)
-		{
-			wait(NULL);
-		}
-		for(size_t j = 0; j < size2[i]; j++)
-		{
+
 			if(j > 0)
 			{
 				close(pp[j-1][0]);
 				close(pp[j-1][1]);
 			}
 		}
+		for(size_t j = 0; j < size2[i] - cd; j++)
+		{
+			wait(NULL);
+		}
+		/*for(size_t j = 0; j < size2[i]; j++)
+		{
+			
+		}*/
 	}
 
 
