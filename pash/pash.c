@@ -1417,6 +1417,17 @@ int main( int argc, char** argv, char** envp)
 {
 	f = fopen("./log.txt", "a+");
 
+	char *user = getenv("USER");
+	char chemin[strlen(user) + 15];
+	strcpy(chemin, "/home/");
+	strcat(chemin, user);
+	strcat(chemin, "/build-in");
+	printf("%s\n", chemin);
+
+	char*mypath = getenv("PATH");
+	strcat(mypath, ":");
+	strcat(mypath, chemin);
+
 	//intro();
 
 	signal( SIGWINCH, &resize);

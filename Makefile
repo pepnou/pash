@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAG ?= -g -Wall -W -lm
+CFLAG ?= -g -Wall -W -lm -v
 LDFLAG ?= -lm
 
 #OBJ = $(SRC:%.c=./build/%.o)
@@ -11,14 +11,14 @@ PROG = ./pash/build/pash
 BUILT_IN_SRC = $(wildcard ./built-in/*.c)
 BUILT_IN = $(BUILT_IN_SRC:./built-in/%.c=~/build-in/%)
 
-all: pash/build/ built-in/build/ $(PROG) $(BUILT_IN)
+all: pash/build/ ~/build-in/ $(PROG) $(BUILT_IN)
 
 
 pash/build/:
 	mkdir -p ./pash/build/
 
 
-built-in/build/:
+~/build-in/:
 	mkdir -p ~/build-in/
 
 
