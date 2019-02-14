@@ -9,7 +9,7 @@ PASH_OBJ = $(PASH_SRC:./pash/%.c=./pash/build/%.o)
 PROG = ./pash/build/pash
 
 BUILT_IN_SRC = $(wildcard ./built-in/*.c)
-BUILT_IN = $(BUILT_IN_SRC:./built-in/%.c=./built-in/build/%)
+BUILT_IN = $(BUILT_IN_SRC:./built-in/%.c=~/build-in/%)
 
 all: pash/build/ built-in/build/ $(PROG) $(BUILT_IN)
 
@@ -19,7 +19,7 @@ pash/build/:
 
 
 built-in/build/:
-	mkdir -p ./built-in/build/
+	mkdir -p ~/build-in/
 
 
 $(PROG): $(PASH_OBJ)
@@ -30,11 +30,11 @@ $(PROG): $(PASH_OBJ)
 	$(CC) -c $(CFLAG) $< -o $@
 
 
-./built-in/build/%.o:./built-in/%.c
+~/build-in/%.o:./built-in/%.c
 	$(CC) -o $@ $(CFLAG) -c $<
 
 
-./built-in/build/%:./built-in/build/%.o
+~/build-in/%:~/build-in/%.o
 	$(CC) -o $@ $< $(LDFLAG)
 
 

@@ -1,13 +1,19 @@
 #include <stdio.h>
+#include <unistd.h>
 
-int main(int argc, char const *argv[])
+int main()
 {
-	printf("HI FIVE !\n3\a\n");
+	printf("HI FIVE !\n(._.)/      \\(._.)\a");
+	fflush(stdout);
 	sleep(1);
-	printf("2\a\n");
+	printf("\e[27D\e[K(o_o)/    \\(o_o)\a");
+	fflush(stdout);
 	sleep(1);
-	printf("1\a\n");
+	printf("\e[25D\e[K(0_0)/  \\(0_0)\a");
+	fflush(stdout);
 	sleep(1);
-	printf("(._.)/\\(._.)\n");
+	printf("\e[23D\e[K(^_^)/\\(^_^)\a\n");
+	fflush(stdout);
+
 	return 0;
 }

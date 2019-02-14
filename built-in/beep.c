@@ -21,19 +21,19 @@ int main()
 	
     long microseconds = 500000;
 
-    printf("\nPrompt is waking up");
+    //printf("\nPrompt is waking up");
 	
 	for (int i = 0; i < size; ++i)
 	{
 		if(song[i] == 0)
 		{
 		    nsleep(microseconds);
-		   	printf(".");
+		   	//printf(".");
 		   	fflush(stdout);
 		}
 		else
 		{
-			printf(".\a");
+			printf("\a");
 			fflush(stdout);
 			nsleep(microseconds);
 		}

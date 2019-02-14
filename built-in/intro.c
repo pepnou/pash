@@ -22,8 +22,8 @@ void beep()
 	if(!parent)
 	{
 		char ** argv = malloc(sizeof(char*));
-		argv[0] = "/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/beep";
-		int i = execv("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/beep", argv);
+		argv[0] = "/home/enderswype/master_M2/aise/projet/psh/built-in/build/beep";
+		int i = execv("/home/enderswype/master_M2/aise/projet/psh/built-in/build/beep", argv);
 		if( i == -1)
 			perror("execv");
 		exit(1);
