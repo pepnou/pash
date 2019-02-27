@@ -62,7 +62,7 @@
 char *smiley = "<(^_^)>";
 
 
-FILE* f;
+//FILE* f;
 
 
 int width, height;
@@ -87,11 +87,10 @@ void intro()
 
 	if(!parent)
 	{
-		char ** argv = malloc(sizeof(char*));
-		argv[0] = "/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro";
-		int i = execvp("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro", argv);
+                char* b = "intro";
+		int i = execvp(b, &b);
 		if( i == -1)
-			perror("execv");
+			perror("execvp");
 		exit(1);
 	}
 	wait(NULL);
@@ -120,118 +119,6 @@ void end()
 }
 
 //display prompt
-size_t prompt_old()
-{
-	char pr[] = "CC$ ";
-	write(STDOUT_FILENO, pr, strlen(pr));
-
-	return strlen(pr); // -1 pour enlever la longueur de \n
-}
-
-// size_t prompt()
-// {
-// 	// http://ezprompt.net/
-// 		/*wordexp_t ptr;
-// 	wordexp("PATH", &ptr, WRDE_UNDEF);
-// 	printf("%s\n", ptr);*/
-// 	size_t size = 0;
-// 	char *pwd = getenv("PWD"), *user = getenv("USER"), *home = getenv("HOME");
-// 	struct winsize w;
-// 	ioctl(0, TIOCGWINSZ, &w);
-// 	/*char *base_color, *time_color, *user_color, *pwd_color, *smiley_color, *smiley_face;
-// 	size_t size = 0;
-// 	ssize_t lu;
-// 	FILE *file = fopen("./built-in/build/prompt_param.txt", "r");
-// 	for (int i = 0; i < 6; ++i)
-// 	{
-// 		switch (i)
-// 		{
-// 			case 0 :
-// 				lu = getline(&base_color, &size, file);
-// 				base_color[-1] = '\0';
-// 				break;
-
-// 			case 1 :
-// 				lu = getline(&time_color, &size, file);
-// 				break;
-
-// 			case 2 :
-// 				lu = getline(&user_color, &size, file);
-// 				break;
-
-// 			case 3 :
-// 				lu = getline(&pwd_color, &size, file);
-// 				break;
-
-// 			case 4 :
-// 				lu = getline(&smiley_color, &size, file);
-// 				break;
-
-// 			case 5 :
-// 				lu = getline(&smiley_face, &size, file);
-// 				break;
-// 		}
-// 	}
-// 	printf("%s bonsoir", base_color);*/
-
-// 	time_t temps = time(NULL);
-// 	struct tm now = *localtime(&temps);
-// 	char shortpwd[strlen(pwd) - strlen(home)];
-
-// 	//debut prompt
-// 	printf("\n" GROS);
-// 	//time
-// 	printf(BLANC"["ROUGE);
-// 	if(now.tm_hour<10)
-// 		printf("0");
-// 	printf("%d"BLANC BLINK":"UNBLINK ROUGE, now.tm_hour);
-// 	if(now.tm_min<10)
-// 		printf("0");
-// 	printf("%d"BLANC "]", now.tm_min);
-// 	size +=8;
-
-// 	//username : - user =>
-// 	printf(PETIT"-"RESET GROS B_VERT"%s" BLANC ":", user);
-// 	size += 2+strlen(user);
-
-// 	//chemin absolut avec raccourci ~
-// 	printf(GROS B_CYAN);
-// 	if(strlen(pwd)>strlen(home))
-// 	{
-// 		strncpy(shortpwd, &pwd[strlen(home)], (strlen(pwd) - strlen(home)));
-// 		printf("~%s\n", shortpwd);	
-// 		size += 2+strlen(pwd);
-// 	}
-// 	else
-// 	{
-// 		if (strlen(pwd) == strlen(home))
-// 		{
-// 			printf("~\n");
-// 			size += 2;
-// 		}
-// 		else
-// 		{
-// 			printf("%s\n", pwd);
-// 			size += 1 + strlen(pwd);
-// 		}
-// 	}
-// 	size -= 2;
-// 	if(size <= w.ws_col)
-// 		size += w.ws_col - size;
-// 	else
-// 		size += (w.ws_col - (size%w.ws_col));
-
-// 	printf(RESET);
-
-// 	//smiley
-// 	printf( GROS B_JAUNE" %s " BLANC BLINK"| "RESET, smiley);
-// 	size += strlen(smiley) + 4;
-// 	//printf(" %d", size);
-// 	fflush(stdout);
-
-// 	return size + 3;
-// }
-
 size_t prompt()
 {
 	size_t size = 0;
@@ -421,7 +308,7 @@ void display(historique h, int selected)
 
 		for(unsigned i = 0; i < nbL; i++)
 		{
-			fprintf(f, "%s\n", ordered[i]);
+			//fprintf(f, "%s\n", ordered[i]);
 			if(selected >= 0 && i == selected % nbL)
 			{
 				unsigned pos = (width/nbpL) * (selected/nbL);
@@ -616,13 +503,13 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 	}
 	else if(h->cur == 1)
 	{
-		fprintf(f, "%s\n", &(buf[*cur]));
+		//fprintf(f, "%s\n", &(buf[*cur]));
 		//fprintf(f, "%s\n", buf);
-		fprintf(f, "%s\n", buf);
+		//fprintf(f, "%s\n", buf);
 		strncpy_buff( &(buf[*cur + strlen(h->liste->buf)]), &(buf[*cur]), *fin - *cur);
-		fprintf(f, "%s\n", buf);
+		//fprintf(f, "%s\n", buf);
 		strncpy(&(buf[*cur]), h->liste->buf, strlen(h->liste->buf));
-		fprintf(f, "%s\n\n", buf);
+		//fprintf(f, "%s\n\n", buf);
 
 		*cur = *cur + strlen(h->liste->buf);
 		*fin = *fin + strlen(h->liste->buf);
@@ -657,8 +544,8 @@ historique* autoComp(char* buf, size_t* cur, size_t* fin, size_t* prw)
 //execute a command line
 void execution(char* buf)
 {
-	fprintf(f, "%s\n", buf);
-	fprintf(f, "\n");
+	//fprintf(f, "%s\n", buf);
+	//fprintf(f, "\n");
 
 	char *cpy =  NULL, **tmp1 = NULL, ***tmp2 = NULL, ****WOW = NULL;
 	size_t tmp = 0, size1 = 0, *size2 = NULL, **size3 = NULL;
@@ -738,8 +625,8 @@ void execution(char* buf)
 		if(!strncmp(&cpy[i], "&&", 2))
 			size1++;
 	size1++;
-	fprintf(f, "%ld\n", size1);
-	fflush(f);
+	//fprintf(f, "%ld\n", size1);
+	//fflush(f);
 	
 	tmp1 = malloc((size1 + 1)*sizeof(char*));
 	tmp2 = malloc((size1 + 1)*sizeof(char**));
@@ -755,13 +642,16 @@ void execution(char* buf)
 			tmp1[tmp] = strtok(cpy, "&&");
 		else
 			tmp1[tmp] = strtok(NULL, "&&");
-		fprintf(f, "%s\n", tmp1[tmp]);
-		fflush(f);
+		//fprintf(f, "%s\n", tmp1[tmp]);
+		//fflush(f);
 		
 		tmp++;
 	} while(tmp1[tmp - 1]);
-	fprintf(f, "\n");
-	fflush(f);
+
+
+
+	//fprintf(f, "\n");
+	//fflush(f);
 
 
 	for(size_t i = 0; i < size1; i++)
@@ -771,8 +661,8 @@ void execution(char* buf)
 			if(!strncmp(&(tmp1[i][j]), "|", 1))
 				size2[i]++;
 		size2[i]++;
-		fprintf(f, "%ld\n", size2[i]);
-		fflush(f);
+		//fprintf(f, "%ld\n", size2[i]);
+		//fflush(f);
 
 		tmp2[i] = malloc((size2[i] + 1)*sizeof(char*));
 		WOW[i] = malloc((size2[i] + 1)*sizeof(char**));
@@ -785,14 +675,14 @@ void execution(char* buf)
 				tmp2[i][tmp] = strtok(tmp1[i], "|");
 			else
 				tmp2[i][tmp] = strtok(NULL, "|");
-			fprintf(f, "%s\n", tmp2[i][tmp]);
-			fflush(f);
+			//fprintf(f, "%s\n", tmp2[i][tmp]);
+			//fflush(f);
 			
 			tmp++;
 		} while(tmp2[i][tmp - 1]);
 	}
-	fprintf(f, "\n");
-	fflush(f);
+	//fprintf(f, "\n");
+	//fflush(f);
 
 
 	for(size_t i = 0; i < size1; i++)
@@ -804,8 +694,8 @@ void execution(char* buf)
 				if(!strncmp(&tmp2[i][j][k], " ", 1))
 					size3[i][j]++;
 			size3[i][j]++;
-			fprintf(f, "%ld\n", size3[i][j]);
-			fflush(f);
+			//fprintf(f, "%ld\n", size3[i][j]);
+			//fflush(f);
 
 			WOW[i][j] = malloc((size3[i][j] + 1)*sizeof(char*));
 
@@ -815,15 +705,15 @@ void execution(char* buf)
 					WOW[i][j][tmp] = strtok(tmp2[i][j], " ");
 				else
 					WOW[i][j][tmp] = strtok(NULL, " ");
-				fprintf(f, "%s\n", WOW[i][j][tmp]);
-				fflush(f);
+				//fprintf(f, "%s\n", WOW[i][j][tmp]);
+				//fflush(f);
 				
 				tmp++;
 			} while(WOW[i][j][tmp - 1]);
 		}
 	}
-	fprintf(f, "\n");
-	fflush(f);
+	//fprintf(f, "\n");
+	//fflush(f);
 
 
 
@@ -903,8 +793,8 @@ void execution(char* buf)
 						perror(WOW[i][j][0]);
 					exit(1);
 				}
-
-				ajoutDeb2(&processes, parent, WOW[i][j][0]);
+                                if(background)
+				        ajoutDeb2(&processes, parent, WOW[i][j][0]);
 			}
 			else
 				nb_builtin++;
@@ -938,6 +828,7 @@ void execution(char* buf)
 		free(WOW[i]);
 		free(tmp2[i]);
 	}
+        
 	free(WOW);
 	free(tmp2);
 	free(tmp1);
@@ -1413,9 +1304,9 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 	}
 }
 
-int main( int argc, char** argv, char** envp)
+int main()
 {
-	f = fopen("./log.txt", "a+");
+	//f = fopen("./log.txt", "a+");
 
 	char *user = getenv("USER");
 	char chemin[strlen(user) + 15];
@@ -1424,11 +1315,11 @@ int main( int argc, char** argv, char** envp)
 	strcat(chemin, "/build-in");
 	printf("%s\n", chemin);
 
-	char*mypath = getenv("PATH");
+	char *mypath = getenv("PATH");
 	strcat(mypath, ":");
 	strcat(mypath, chemin);
 
-	//intro();
+	intro();
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);
@@ -1469,13 +1360,22 @@ int main( int argc, char** argv, char** envp)
 
 	} while(!over);
 
+        elem2* tmp = processes;
+        while(tmp)
+        {
+            
+        }
+
+        supprList(h.liste);
+        supprList2(processes);
+        free(buf);
+	
+        
+        //fclose(f);
+
 
 
 	tcsetattr(0, TCSANOW, &old);
-	supprList(h.liste);
-
-
-	fclose(f);
 
 	exit(0);
 }
