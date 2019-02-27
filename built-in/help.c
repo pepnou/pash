@@ -10,6 +10,7 @@ int main(int argc, char const *argv[])
 	printf("-> Appuyer une 2ème fois sur <Tab> vous permet de naviguer au travers des différentes possibilités avec les flèches\n");
 	printf("-> Quelques petites commandes bonus :\n   - highfive\n   - Date\n   - Ping\n");
 	printf("-> Vous pouvez rejouer la musique d'introduction a tout moment avec <beep> et même le message d'introduction avec <intro>\n");
+	printf("-> Pour quitter proprement PASH, utilisez de préférence la commande <exit>, sinon un bon vieux ctrl+D ca marche aussi\n");
 	printf("-> Un <make bigclean> supprimera tout les executables créés par par le <make>\n\n");
 	printf("WARNING :\n");
 	printf("La navigation intuitive requière les caractères suivant :\n    </>\n    <~/>\n    <./>\nAutrement, Pash se chargera ");

@@ -885,6 +885,7 @@ int specialExec(int argc, char** argv)
 	}
         else if(!strcmp(argv[0], "exit"))
         {
+        	printf("Goodbye Cap'tain (._.)/\n");
             over = 1;
             return 1;
         }
