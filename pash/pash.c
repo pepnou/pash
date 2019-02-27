@@ -101,12 +101,8 @@ void intro()
 
 	if(!parent)
 	{
-<<<<<<< HEAD
-		int i = execvp("intro", NULL);
-=======
-                char* b = "intro";
+        char* b = "intro";
 		int i = execvp(b, &b);
->>>>>>> 7e17c7ad42a86eedd030bf67b89ba59810c0502c
 		if( i == -1)
 			perror("execvp");
 		exit(1);
@@ -1338,10 +1334,7 @@ int main()
 	strcat(mypath, chemin);
 
 	intro();
-<<<<<<< HEAD
 	beep();
-=======
->>>>>>> 7e17c7ad42a86eedd030bf67b89ba59810c0502c
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);
