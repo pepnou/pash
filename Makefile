@@ -45,3 +45,4 @@ clean:
 bigclean:
 	rm -r -f ./pash/build/
 	rm -r -f ./built-in/build/
+	rm -f *.o
