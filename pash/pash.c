@@ -81,15 +81,27 @@ char *strncpy_buff(char *dest, const char *src, size_t n)
 	return dest;
 }
 
+void beep()
+{
+	int parent = fork();
+
+	if(!parent)
+	{
+		int i = execvp("beep", NULL);
+		if( i == -1)
+			perror("execv");
+		exit(1);
+	}
+	wait(NULL);
+}
+
 void intro()
 {
 	int parent = fork();
 
 	if(!parent)
 	{
-		char ** argv = malloc(sizeof(char*));
-		argv[0] = "/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro";
-		int i = execvp("/home/enderswype/master_M2/AISE/Projet_shell/psh/built-in/build/intro", argv);
+		int i = execvp("intro", NULL);
 		if( i == -1)
 			perror("execv");
 		exit(1);
@@ -1428,7 +1440,8 @@ int main( int argc, char** argv, char** envp)
 	strcat(mypath, ":");
 	strcat(mypath, chemin);
 
-	//intro();
+	intro();
+	beep();
 
 	signal( SIGWINCH, &resize);
 	signal( SIGINT, &end);

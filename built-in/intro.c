@@ -15,20 +15,6 @@ generator :
 http://patorjk.com/software/taag/#p=display&f=Colossal&t=Welcome%0Ain%20pash%20!%20!
 */
 
-void beep()
-{
-	int parent = fork();
-
-	if(!parent)
-	{
-		char ** argv = malloc(sizeof(char*));
-		argv[0] = "/home/enderswype/master_M2/aise/projet/psh/built-in/build/beep";
-		int i = execv("/home/enderswype/master_M2/aise/projet/psh/built-in/build/beep", argv);
-		if( i == -1)
-			perror("execv");
-		exit(1);
-	}
-}
 
 int main()
 {
@@ -37,8 +23,6 @@ int main()
 
 	struct winsize w;
 	ioctl(0, TIOCGWINSZ, &w);
-
-	beep();
 
 	for (int i = 0; i < w.ws_col; ++i)
 	{
