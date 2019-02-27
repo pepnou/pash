@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+
+void nsleep(long us)
+{
+    struct timespec wait;
+    
+    wait.tv_sec = us / (1000 * 1000);
+    wait.tv_nsec = (us % (1000 * 1000)) * 1000;
+    nanosleep(&wait, NULL);
+}
 
 #define RESET "\e[0m"
 #define BLINK "\e[5m"
@@ -20,7 +31,7 @@ int main()
 {
 	//c'etait mon premier essaie j'avais tout fais a la main xD
 	//printf("#       #      ###\n #       #      # #\n #       #      # #\n #       #      # #\n #       #      # #\n #       # #### ### #### ##### ##### ####\n #   #   # #  # #   #    #   # # # # #  #\n oo ooo oo oooo o   o    o   o o o o oooo\n  ooo ooo  o    o   o    o   o o   o o\n   o   o   oooo ooo oooo ooooo o   o oooo\n ");
-
+	struct timeval t1, t2;
 	struct winsize w;
 	ioctl(0, TIOCGWINSZ, &w);
 
