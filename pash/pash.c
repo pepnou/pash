@@ -101,8 +101,7 @@ void intro()
 
 	if(!parent)
 	{
-        char* b = "intro";
-		int i = execvp(b, &b);
+		int i = execvp("intro", NULL);
 		if( i == -1)
 			perror("execvp");
 		exit(1);
@@ -884,6 +883,11 @@ int specialExec(int argc, char** argv)
 
 		return 1;
 	}
+        else if(!strcmp(argv[0], "exit"))
+        {
+            over = 1;
+            return 1;
+        }
 	return 0;
 }
 
@@ -1133,11 +1137,14 @@ void handle( char c, char* buf, size_t* cur, size_t* fin, size_t* size, size_t* 
 					ajoutDeb(&(h->liste), buf, *fin);
 					execution(buf);
 				}
+                                
+                                if(!over)
+                                {
+				    *prw = prompt();
 
-				*prw = prompt();
-
-				(*cur) = (*fin) = 0;
-				write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
+				    (*cur) = (*fin) = 0;
+				    write(STDOUT_FILENO, SAVEC, strlen(SAVEC));
+                                }
 				break;
 			}
 			//effacer tout : ctrl + U
