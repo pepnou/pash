@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAG ?= -g -Wall -W -lm -v
+CFLAG ?= -g -Wall -W
 LDFLAG ?= -lm
 
 #OBJ = $(SRC:%.c=./build/%.o)
@@ -23,7 +23,7 @@ pash/build/:
 
 
 $(PROG): $(PASH_OBJ)
-	$(CC) $(LDFLAG) $^ -o $@
+	$(CC) $^ -o $@ $(LDFLAG)
 
 
 ./pash/build/%.o : ./pash/%.c
