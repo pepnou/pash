@@ -1382,14 +1382,9 @@ int main()
 
 	} while(!over);
 
-        elem2* tmp = processes;
-        while(tmp)
-        {
-            
-        }
-
+        
+        end();
         supprList(h.liste);
-        supprList2(processes);
         free(buf);
 	
         
